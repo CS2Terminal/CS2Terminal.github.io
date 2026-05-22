@@ -1103,7 +1103,7 @@
     if (STATE.phase !== 'chat' || STATE.busy || !STATE.currentItem) return;
     STATE.busy = true;
     updateOfferButtons();
-    const bonus = Math.round(STATE.currentItem.price * 0.2 * 100) / 100;
+    const bonus = Math.round(STATE.currentItem.price * 0.05 * 100) / 100;
     const newMoney = getMoney() + bonus;
     setMoney(newMoney);
     STATE.rejects += 1;
