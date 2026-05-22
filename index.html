@@ -720,8 +720,9 @@
 
 <script>
 (() => {
-  const SHARED_KEY = 'cs2_shared';
+  const STORE_KEY = 'cs2_shared';
   const REJECT_LIMIT = 10;
+  const SELL_RATE = 0.8;
 
   const BASE_ITEMS = [
     { name: 'AK-47 | Redline', rarity: 'classified', wear: 'Field-Tested', price: 24.50, float: '0.2341' },
@@ -745,9 +746,10 @@
   ];
 
   const VENDOR_NAMES = [
-    'Aleksandr_V', 'ShadowBroker99', 'TradeKingRU', 'dark_merchant', 'xXSkinVaultXx',
-    'booth_proxy', 'node_7', 'dealer_03'
+    'Aleksandr_V', 'ShadowBroker99', 'TradeKingRU', 'dark_merchant',
+    'xXSkinVaultXx', 'booth_proxy', 'node_7', 'dealer_03'
   ];
+
   const GREETINGS = [
     'yo. heard you were looking. i got something.',
     'bro you actually came. okay. listen up.',
@@ -755,9 +757,12 @@
     'finally. been waiting. got fresh stock in.',
     'new stuff just landed. you got timing.'
   ];
+
   const PITCH_INTROS = [
-    'check this out:', 'got this right now:', 'fresh drop:', 'one-time offer:', 'just pulled this:', 'straight from a case:'
+    'check this out:', 'got this right now:', 'fresh drop:', 'one-time offer:',
+    'just pulled this:', 'straight from a case:'
   ];
+
   const REJECT_RESPONSES = [
     'fine. your loss.', 'okay okay. but hear me out on the next one.',
     'bro really? that price is steal.', 'whatever man. i got more.',
@@ -765,15 +770,12 @@
     'not for everyone i guess.', 'fair. but youre missing out.',
     'thats actually insane value but okay', 'ok i see you. selective buyer. i respect.'
   ];
+
   const BUY_RESPONSES = [
     'TRANSACTION CONFIRMED. sending now.',
     'deal. encrypting transfer.',
     'smart move. item is yours.',
     'good call. ill process it.'
-  ];
-  const CRASH_LINES = [
-    'ERR_MEMORY_FAULT_0x8F3A', 'STACK OVERFLOW AT 0xDEADBEEF', 'NULL PTR EXCEPTION',
-    'DISK WIPE: 23%', 'DISK WIPE: 61%', 'DISK WIPE: 99%', '>> KEYS ROTATED <<', 'BYE.'
   ];
 
   const el = {
@@ -807,92 +809,133 @@
   };
 
   const STATE = {
-    phase: 'boot',
+    phase: 'login',
+    busy: false,
     sessionId: null,
     correctPassword: null,
     currentItem: null,
     vendor: null,
     rejects: 0,
-    dead: false,
-    busy: false,
-    introShown: false,
   };
 
-  function safeParse(raw) {
-    try { return JSON.parse(raw); } catch { return null; }
+  function round2(value) {
+    return Math.round(Number(value || 0) * 100) / 100;
   }
 
-  function loadShared() {
-    const data = safeParse(localStorage.getItem(SHARED_KEY));
-    if (data && typeof data === 'object') return data;
-    return null;
-  }
-
-  function saveShared(data) {
-    localStorage.setItem(SHARED_KEY, JSON.stringify(data));
-  }
-
-  function ensureShared() {
-    let data = loadShared();
-    if (!data) {
-      data = {
-        sessionId: newSessionId(),
-        dead: false,
-        money: 0,
-        inventory: [],
-        prices: {},
-        priceLog: [],
-      };
-      saveShared(data);
-    } else {
-      if (!Array.isArray(data.inventory)) data.inventory = [];
-      if (!data.prices || typeof data.prices !== 'object') data.prices = {};
-      if (!Array.isArray(data.priceLog)) data.priceLog = [];
-      if (typeof data.money !== 'number') data.money = 0;
-      if (typeof data.dead !== 'boolean') data.dead = false;
-      if (!data.sessionId) data.sessionId = newSessionId();
-      saveShared(data);
-    }
-    return data;
-  }
-
-  function derivePassword(sessionId) {
-    return String((sessionId * 31 + 7) % 9999).padStart(4, '0');
+  function money(value) {
+    return `$${round2(value).toFixed(2)}`;
   }
 
   function newSessionId() {
     return Math.floor(1000 + Math.random() * 8999);
   }
 
+  function derivePassword(sessionId) {
+    return String((Number(sessionId) * 31 + 7) % 9999).padStart(4, '0');
+  }
+
+  function makeId() {
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  }
+
+  function defaultStore() {
+    return {
+      schemaVersion: 2,
+      sessionId: newSessionId(),
+      dead: false,
+      money: 0,
+      inventory: [],
+      prices: {},
+      priceLog: [],
+      marketTick: 0,
+      marketUpdatedAt: 0,
+      nextTick: 0,
+    };
+  }
+
+  function normalizeStore(raw) {
+    const base = defaultStore();
+    if (!raw || typeof raw !== 'object') return base;
+
+    const out = { ...base, ...raw };
+
+    out.sessionId = Number.isFinite(Number(out.sessionId)) ? Number(out.sessionId) : base.sessionId;
+    out.dead = !!out.dead;
+    out.money = Number.isFinite(Number(out.money)) ? round2(out.money) : 0;
+
+    out.inventory = Array.isArray(out.inventory)
+      ? out.inventory
+          .filter((item) => item && typeof item === 'object')
+          .map((item) => ({
+            name: String(item.name || 'Unknown Item'),
+            rarity: String(item.rarity || 'consumer'),
+            wear: String(item.wear || 'Unknown'),
+            price: round2(Number(item.price) || 0),
+            float: String(item.float || '0.0000'),
+            boughtAt: round2(Number(item.boughtAt ?? item.price) || 0),
+            acquiredTime: Number(item.acquiredTime) || Date.now(),
+            id: String(item.id || makeId()),
+          }))
+      : [];
+
+    out.prices = (out.prices && typeof out.prices === 'object' && !Array.isArray(out.prices)) ? out.prices : {};
+    out.priceLog = Array.isArray(out.priceLog) ? out.priceLog : [];
+
+    out.marketTick = Number.isFinite(Number(out.marketTick)) ? Number(out.marketTick) : 0;
+    out.marketUpdatedAt = Number.isFinite(Number(out.marketUpdatedAt)) ? Number(out.marketUpdatedAt) : 0;
+    out.nextTick = Number.isFinite(Number(out.nextTick)) ? Number(out.nextTick) : 0;
+
+    return out;
+  }
+
+  function readStore() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return null;
+      return normalizeStore(JSON.parse(raw));
+    } catch {
+      return null;
+    }
+  }
+
+  function writeStore(store) {
+    localStorage.setItem(STORE_KEY, JSON.stringify(normalizeStore(store)));
+  }
+
+  function updateStore(mutator) {
+    const current = readStore() || defaultStore();
+    const draft = JSON.parse(JSON.stringify(current));
+    const result = mutator(draft) || draft;
+    const normalized = normalizeStore(result);
+    writeStore(normalized);
+    return normalized;
+  }
+
+  function bootStore() {
+    const existing = readStore();
+    if (!existing) {
+      writeStore(defaultStore());
+    }
+    return readStore() || defaultStore();
+  }
+
   function getMoney() {
-    const data = loadShared();
-    return data ? (Number(data.money) || 0) : 0;
+    const store = readStore() || defaultStore();
+    return round2(store.money);
   }
 
   function setMoney(value) {
-    const data = ensureShared();
-    data.money = Math.max(0, Math.round(Number(value) * 100) / 100);
-    saveShared(data);
+    updateStore((draft) => {
+      draft.money = Math.max(0, round2(value));
+      return draft;
+    });
     syncHeader();
   }
 
-  function addToInventory(item) {
-    const data = ensureShared();
-    data.inventory.push({
-      ...item,
-      boughtAt: item.price,
-      acquiredTime: Date.now(),
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-    });
-    saveShared(data);
-  }
-
-  function getCurrentPrice(name, basePrice) {
-    const data = loadShared();
-    if (data && data.prices && typeof data.prices[name] === 'number') {
-      return data.prices[name];
-    }
-    return basePrice;
+  function getCurrentPrice(name, fallbackPrice) {
+    const store = readStore() || defaultStore();
+    const override = store.prices && typeof store.prices[name] === 'number' ? store.prices[name] : null;
+    return round2(override == null ? fallbackPrice : override);
   }
 
   function pickItem() {
@@ -903,11 +946,7 @@
     };
   }
 
-  function formatMoney(n) {
-    return `$${Number(n || 0).toFixed(2)}`;
-  }
-
-  function rarityLabel(rarity) {
+  function rarityClass(rarity) {
     return `rarity-${rarity}`;
   }
 
@@ -915,48 +954,9 @@
     return STATE.vendor || 'dealer';
   }
 
-  function updateOfferPanel(item = STATE.currentItem) {
-    const currentMoney = getMoney();
-    el.offerWallet.textContent = formatMoney(currentMoney);
-    el.offerLimit.textContent = `${Math.max(0, REJECT_LIMIT - STATE.rejects)} rejects`;
-    el.attemptsDisplay.textContent = `ATTEMPTS LEFT: ${Math.max(0, REJECT_LIMIT - STATE.rejects)}`;
-    el.offerVendor.textContent = vendorName();
-    el.statusNote.textContent = STATE.phase === 'chat' ? 'live negotiation' : (STATE.dead ? 'session rotated' : 'awaiting authentication');
-
-    if (!item) {
-      el.offerName.textContent = 'No offer yet';
-      el.offerRarity.textContent = 'LOCKED';
-      el.offerWear.textContent = 'Authenticate to begin negotiation.';
-      el.offerFloat.textContent = 'Float: --';
-      el.offerPrice.textContent = '$0.00';
-      el.offerRisk.textContent = 'High';
-      return;
-    }
-
-    el.offerName.textContent = item.name;
-    el.offerRarity.textContent = item.rarity.toUpperCase();
-    el.offerRarity.className = `item-rarity ${rarityLabel(item.rarity)}`;
-    el.offerWear.textContent = item.wear;
-    el.offerFloat.textContent = `Float: ${item.float}`;
-    el.offerPrice.textContent = formatMoney(item.price);
-    el.offerRisk.textContent = item.rarity === 'gold' ? 'Extreme' : item.rarity === 'covert' ? 'Very High' : 'High';
-  }
-
-  function syncHeader() {
-    const data = ensureShared();
-    STATE.sessionId = data.sessionId;
-    STATE.correctPassword = derivePassword(data.sessionId);
-    el.sessionDisplay.textContent = `SESSION: ${STATE.sessionId}`;
-    el.loginSession.textContent = STATE.sessionId;
-    el.moneyDisplay.textContent = getMoney().toFixed(2);
-    el.offerWallet.textContent = formatMoney(getMoney());
-    el.phaseBadge.textContent = STATE.dead ? 'ROTATED' : (STATE.phase === 'chat' ? 'LIVE' : 'LOCKED');
-    el.phaseBadge.className = `badge ${STATE.dead ? 'warn' : ''}`.trim();
-  }
-
   function printLine(text, cls = '', container = el.screen) {
     const line = document.createElement('div');
-    line.className = `line${cls ? ' ' + cls : ''}`;
+    line.className = `line${cls ? ` ${cls}` : ''}`;
     line.textContent = text;
     container.appendChild(line);
     container.scrollTop = container.scrollHeight;
@@ -970,12 +970,15 @@
   function bubble(text, type = 'system') {
     const wrap = document.createElement('div');
     wrap.className = `bubble ${type}`;
+
     const av = document.createElement('div');
     av.className = 'avatar';
     av.textContent = type === 'vendor' ? 'D' : type === 'warn' ? '!' : 'S';
+
     const tx = document.createElement('div');
     tx.className = 'text';
     tx.textContent = text;
+
     wrap.appendChild(av);
     wrap.appendChild(tx);
     el.screen.appendChild(wrap);
@@ -1002,77 +1005,113 @@
         <div class="offer-logo">CS2</div>
       </div>
       <div class="item-name">${item.name}</div>
-      <div class="item-rarity ${rarityLabel(item.rarity)}">[${item.rarity.toUpperCase()}] ${item.wear}</div>
+      <div class="item-rarity ${rarityClass(item.rarity)}">[${item.rarity.toUpperCase()}] ${item.wear}</div>
       <div class="item-float">Float: ${item.float}</div>
-      <div class="price">${formatMoney(item.price)}</div>
+      <div class="price">${money(item.price)}</div>
     `;
     el.screen.appendChild(block);
     el.screen.scrollTop = el.screen.scrollHeight;
   }
 
-  function setPhase(phase) {
-    STATE.phase = phase;
-    el.phaseBadge.textContent = STATE.dead ? 'ROTATED' : (phase === 'chat' ? 'LIVE' : 'LOCKED');
-    el.phaseBadge.className = `badge ${STATE.dead ? 'warn' : ''}`.trim();
-    el.buyBtn.disabled = phase !== 'chat' || !STATE.currentItem || STATE.busy;
-    el.passBtn.disabled = phase !== 'chat' || !STATE.currentItem || STATE.busy;
+  function updateOfferPanel(item = STATE.currentItem) {
+    const store = readStore() || defaultStore();
+
+    el.offerWallet.textContent = money(store.money);
+    el.offerLimit.textContent = `${Math.max(0, REJECT_LIMIT - STATE.rejects)} rejects`;
+    el.attemptsDisplay.textContent = `ATTEMPTS LEFT: ${Math.max(0, REJECT_LIMIT - STATE.rejects)}`;
+    el.offerVendor.textContent = vendorName();
+    el.statusNote.textContent = STATE.phase === 'chat' ? 'live negotiation' : 'awaiting authentication';
+    el.statusRight.textContent = `INVENTORY: ${store.inventory.length}`;
+
+    if (!item) {
+      el.offerName.textContent = 'No offer yet';
+      el.offerRarity.textContent = 'LOCKED';
+      el.offerRarity.className = 'item-rarity';
+      el.offerWear.textContent = 'Authenticate to begin negotiation.';
+      el.offerFloat.textContent = 'Float: --';
+      el.offerPrice.textContent = '$0.00';
+      el.offerRisk.textContent = 'High';
+      return;
+    }
+
+    el.offerName.textContent = item.name;
+    el.offerRarity.textContent = item.rarity.toUpperCase();
+    el.offerRarity.className = `item-rarity ${rarityClass(item.rarity)}`;
+    el.offerWear.textContent = item.wear;
+    el.offerFloat.textContent = `Float: ${item.float}`;
+    el.offerPrice.textContent = money(item.price);
+    el.offerRisk.textContent = item.rarity === 'gold' ? 'Extreme' : item.rarity === 'covert' ? 'Very High' : 'High';
   }
 
-  function showLoginScreen(isDead = false) {
+  function syncHeader() {
+    const store = bootStore();
+    STATE.sessionId = store.sessionId;
+    STATE.correctPassword = derivePassword(store.sessionId);
+
+    el.sessionDisplay.textContent = `SESSION: ${STATE.sessionId}`;
+    el.loginSession.textContent = STATE.sessionId;
+    el.moneyDisplay.textContent = round2(store.money).toFixed(2);
+    el.phaseBadge.textContent = STATE.phase === 'chat' ? 'LIVE' : 'LOCKED';
+    el.phaseBadge.className = 'badge';
+    updateOfferPanel(STATE.currentItem);
+  }
+
+  function setPhase(phase) {
+    STATE.phase = phase;
+    el.phaseBadge.textContent = phase === 'chat' ? 'LIVE' : 'LOCKED';
+    el.phaseBadge.className = 'badge';
+    const enabled = phase === 'chat' && !STATE.busy && !!STATE.currentItem;
+    el.buyBtn.disabled = !enabled;
+    el.passBtn.disabled = !enabled;
+  }
+
+  function showLoginScreen() {
     STATE.busy = false;
-    setPhase(isDead ? 'dead_login' : 'login');
+    STATE.currentItem = null;
+    setPhase('login');
+
     el.loginView.classList.remove('hidden');
     el.appView.classList.add('hidden');
     el.commandBar.classList.add('hidden');
+
     el.loginInput.type = 'password';
     el.loginInput.value = '';
     el.loginInput.placeholder = 'enter access code...';
-    el.promptLabel.textContent = 'PASS >';
+
     el.cmdInput.type = 'password';
     el.cmdInput.value = '';
     el.cmdInput.placeholder = 'enter access code...';
     el.cmdInput.disabled = false;
-    el.loginLabelText = isDead ? 'PASS >' : 'PASS >';
-    el.loginSession.textContent = STATE.sessionId;
-    syncHeader();
-    updateOfferPanel(null);
+
     el.screen.innerHTML = '';
-  }
-
-  function bootCardText(isDead = false) {
-    const data = ensureShared();
-    const root = el.loginView.querySelector('.login-card');
-    if (!root) return;
-
-    const existing = root.querySelector('.login-extra');
-    if (existing) existing.remove();
-
-    const extra = document.createElement('div');
-    extra.className = 'login-extra';
-    extra.style.marginTop = '10px';
-    extra.style.color = isDead ? 'var(--red)' : 'var(--yellow)';
-    extra.style.textAlign = 'center';
-    extra.style.fontSize = '12px';
-    extra.style.lineHeight = '1.45';
-    extra.innerHTML = isDead
-      ? `Previous session terminated. New session ID generated: <span style="color:var(--yellow)">${data.sessionId}</span>`
-      : `Visible session ID: <span style="color:var(--yellow)">${data.sessionId}</span> &nbsp;|&nbsp; Password formula is stable across sessions.`;
-    root.appendChild(extra);
+    updateOfferPanel(null);
+    syncHeader();
   }
 
   function showApp() {
     el.loginView.classList.add('hidden');
     el.appView.classList.remove('hidden');
+    el.commandBar.classList.remove('hidden');
   }
 
-  async function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+  function updateButtons() {
+    const enabled = STATE.phase === 'chat' && !STATE.busy && !!STATE.currentItem;
+    el.buyBtn.disabled = !enabled;
+    el.passBtn.disabled = !enabled;
+  }
+
+  function nextVendor() {
+    STATE.vendor = VENDOR_NAMES[Math.floor(Math.random() * VENDOR_NAMES.length)];
   }
 
   function greetVendor() {
-    STATE.vendor = VENDOR_NAMES[Math.floor(Math.random() * VENDOR_NAMES.length)];
+    if (!STATE.vendor) nextVendor();
     bubble(`[${STATE.vendor}]: ${GREETINGS[Math.floor(Math.random() * GREETINGS.length)]}`, 'vendor');
-    printHint('commands: "buy" to purchase • "pass" to decline (+20% of item price)');
+    printHint('commands: "buy" to purchase • "pass" to decline • "inv" to view inventory • "sell <n|last|id>" to sell');
+  }
+
+  async function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   async function offerItem() {
@@ -1080,18 +1119,71 @@
     STATE.currentItem = pickItem();
     syncHeader();
     updateOfferPanel(STATE.currentItem);
+
     bubble(`[${STATE.vendor}]: ${PITCH_INTROS[Math.floor(Math.random() * PITCH_INTROS.length)]}`, 'vendor');
-    await sleep(180);
+    await sleep(160);
     printItem(STATE.currentItem);
     await sleep(120);
     bubble(`[${STATE.vendor}]: price is live. your call.`, 'vendor');
-    updateOfferButtons();
+    updateButtons();
   }
 
-  function updateOfferButtons() {
-    const enabled = STATE.phase === 'chat' && !STATE.busy && !!STATE.currentItem;
-    el.buyBtn.disabled = !enabled;
-    el.passBtn.disabled = !enabled;
+  function addToInventory(item) {
+    updateStore((draft) => {
+      draft.inventory = Array.isArray(draft.inventory) ? draft.inventory : [];
+      draft.inventory.push({
+        name: item.name,
+        rarity: item.rarity,
+        wear: item.wear,
+        price: round2(item.price),
+        float: String(item.float),
+        boughtAt: round2(item.price),
+        acquiredTime: Date.now(),
+        id: makeId(),
+      });
+      return draft;
+    });
+  }
+
+  function removeInventoryItem(index) {
+    let removed = null;
+    const updated = updateStore((draft) => {
+      draft.inventory = Array.isArray(draft.inventory) ? draft.inventory : [];
+      if (index < 0 || index >= draft.inventory.length) return draft;
+      removed = draft.inventory.splice(index, 1)[0];
+      const base = Number(removed?.boughtAt ?? removed?.price ?? 0);
+      const payout = round2(base * SELL_RATE);
+      draft.money = round2(Number(draft.money || 0) + payout);
+      return draft;
+    });
+    return { removed, updated };
+  }
+
+  function parseSellTarget(arg, inventory) {
+    const token = String(arg || '').trim().toLowerCase();
+    if (!token || token === 'last') return inventory.length - 1;
+    if (/^\d+$/.test(token)) return Number(token) - 1;
+
+    const found = inventory.findIndex((item) => String(item.id || '').toLowerCase().startsWith(token));
+    return found;
+  }
+
+  function showInventory() {
+    const store = readStore() || defaultStore();
+    printSep();
+    printLine(`INVENTORY (${store.inventory.length})`, 'big');
+    if (!store.inventory.length) {
+      printLine('Inventory empty.', 'dim');
+      return;
+    }
+
+    store.inventory.forEach((item, idx) => {
+      const cost = money(item.boughtAt ?? item.price ?? 0);
+      printLine(
+        `${idx + 1}. ${item.name} | ${item.wear} | ${cost} | ${String(item.id).slice(-6)}`,
+        'white'
+      );
+    });
   }
 
   function pickRejectResponse() {
@@ -1101,144 +1193,107 @@
 
   async function handleReject() {
     if (STATE.phase !== 'chat' || STATE.busy || !STATE.currentItem) return;
+
     STATE.busy = true;
-    updateOfferButtons();
-    const bonus = Math.round(STATE.currentItem.price * 0.05 * 100) / 100;
-    const newMoney = getMoney() + bonus;
-    setMoney(newMoney);
+    updateButtons();
+
+    const bonus = round2(STATE.currentItem.price * 0.05);
+    const updated = updateStore((draft) => {
+      draft.money = round2(Number(draft.money || 0) + bonus);
+      return draft;
+    });
+
     STATE.rejects += 1;
     syncHeader();
     updateOfferPanel(STATE.currentItem);
+
     bubble(`[${STATE.vendor}]: ${pickRejectResponse()}`, 'system');
-    bubble(`[SYS]: +${formatMoney(bonus)} credited • balance ${formatMoney(newMoney)}`, 'system');
-    await sleep(160);
+    bubble(`[SYS]: +${money(bonus)} credited • balance ${money(updated.money)}`, 'system');
+
+    await sleep(180);
 
     if (STATE.rejects >= REJECT_LIMIT) {
-      await triggerCrash('EXCESSIVE REJECTIONS DETECTED');
-      return;
+      STATE.rejects = 0;
+      nextVendor();
+      bubble('[SYS]: negotiation window expired. re-routing...', 'warn');
+      await sleep(180);
     }
 
     STATE.busy = false;
-    updateOfferButtons();
+    updateButtons();
     await sleep(220);
     await offerItem();
   }
 
   async function handleBuy() {
     if (STATE.phase !== 'chat' || STATE.busy || !STATE.currentItem) return;
+
     STATE.busy = true;
-    updateOfferButtons();
+    updateButtons();
 
     const item = STATE.currentItem;
-    const currentMoney = getMoney();
+    const store = readStore() || defaultStore();
+    const currentMoney = round2(store.money);
+
     if (currentMoney < item.price) {
       bubble('[SYS]: insufficient funds.', 'warn');
       STATE.busy = false;
-      updateOfferButtons();
+      updateButtons();
       return;
     }
 
-    setMoney(currentMoney - item.price);
-    addToInventory(item);
+    updateStore((draft) => {
+      draft.money = round2(Number(draft.money || 0) - item.price);
+      draft.inventory = Array.isArray(draft.inventory) ? draft.inventory : [];
+      draft.inventory.push({
+        name: item.name,
+        rarity: item.rarity,
+        wear: item.wear,
+        price: round2(item.price),
+        float: String(item.float),
+        boughtAt: round2(item.price),
+        acquiredTime: Date.now(),
+        id: makeId(),
+      });
+      return draft;
+    });
+
     syncHeader();
     updateOfferPanel(item);
 
     bubble(`[${STATE.vendor}]: ${BUY_RESPONSES[Math.floor(Math.random() * BUY_RESPONSES.length)]}`, 'vendor');
-    bubble(`[SYS]: -${formatMoney(item.price)} deducted • inventory updated`, 'system');
+    bubble(`[SYS]: -${money(item.price)} deducted • inventory updated`, 'system');
     bubble(`[SYS]: ${item.name} secured to vault.`, 'system');
-    await sleep(220);
-    await triggerCrash('TRANSACTION ANOMALY — HONEYPOT DETECTED');
-  }
 
-  async function triggerCrash(reason) {
-    STATE.phase = 'dead';
-    STATE.busy = true;
-    updateOfferButtons();
-    el.cmdInput.disabled = true;
-    el.buyBtn.disabled = true;
-    el.passBtn.disabled = true;
-
-    const terminal = el.terminal;
-    terminal.classList.add('flash');
-    bubble(`[!] ${reason}`, 'warn');
-    await sleep(160);
-    bubble('[!] initiating secure wipe protocol', 'warn');
-    await sleep(160);
-    bubble('[!] channel compromised', 'warn');
-    await sleep(140);
-    terminal.classList.add('glitching');
-    for (const line of CRASH_LINES) {
-      bubble(line, 'warn');
-      await sleep(90);
-    }
-    await sleep(220);
-    terminal.classList.remove('glitching');
-    terminal.classList.add('dying');
-
-    const data = ensureShared();
-    data.dead = true;
-    data.sessionId = newSessionId();
-    saveShared(data);
-    STATE.sessionId = data.sessionId;
-    STATE.correctPassword = derivePassword(STATE.sessionId);
-    STATE.currentItem = null;
-    STATE.rejects = 0;
-    STATE.dead = true;
-
-    await sleep(1500);
-    terminal.classList.remove('flash');
-    terminal.classList.remove('dying');
-    el.cmdInput.disabled = false;
-    bootCardText(true);
-    showLoginScreen(true);
-    syncHeader();
-    updateOfferPanel(null);
-    STATE.busy = false;
-  }
-
-  async function startChat() {
-    const data = ensureShared();
-    data.dead = false;
-    saveShared(data);
-    STATE.dead = false;
-    STATE.rejects = 0;
     STATE.currentItem = null;
     STATE.busy = false;
-    STATE.vendor = VENDOR_NAMES[Math.floor(Math.random() * VENDOR_NAMES.length)];
+    updateButtons();
 
-    showApp();
-    el.commandBar.classList.remove('hidden');
-    el.screen.innerHTML = '';
-    el.cmdInput.type = 'text';
-    el.cmdInput.placeholder = 'buy / pass';
-    el.promptLabel.textContent = '> ';
-    el.loginInput.value = '';
-
-    syncHeader();
-    updateOfferPanel(null);
-    setPhase('chat');
-    bubble('[SYSTEM]: authentication successful', 'system');
-    bubble('[SYSTEM]: secure channel established', 'system');
-    printSep();
-    await sleep(240);
-    greetVendor();
-    await sleep(260);
+    await sleep(180);
     await offerItem();
-    updateOfferButtons();
-    el.cmdInput.focus();
   }
 
-  function loginAttempt() {
-    const typed = el.loginInput.value.trim();
-    el.loginInput.value = '';
-    if (!typed) return;
-    if (typed === STATE.correctPassword) {
-      startChat();
-    } else {
-      const target = STATE.phase === 'dead_login' ? 'DEAD ACCESS' : 'ACCESS';
-      printLine(`${target} DENIED. incorrect code.`, 'red');
-      printLine('', '');
+  function handleSellCommand(raw) {
+    const store = readStore() || defaultStore();
+    const arg = String(raw || '').trim().slice(4).trim();
+    const idx = parseSellTarget(arg, store.inventory);
+
+    if (!store.inventory.length) {
+      bubble('[SYS]: inventory is empty.', 'warn');
+      return;
     }
+
+    if (idx < 0 || idx >= store.inventory.length) {
+      bubble('[SYS]: item not found. use inv first.', 'warn');
+      return;
+    }
+
+    const item = store.inventory[idx];
+    const payout = round2(Number(item.boughtAt ?? item.price ?? 0) * SELL_RATE);
+    removeInventoryItem(idx);
+    syncHeader();
+
+    bubble(`[SYS]: sold ${item.name} for ${money(payout)}.`, 'system');
   }
 
   function commandAttempt() {
@@ -1246,86 +1301,146 @@
     el.cmdInput.value = '';
     if (!raw) return;
 
-    if (STATE.phase === 'login' || STATE.phase === 'dead_login') {
-      if (raw === STATE.correctPassword) startChat();
-      else printLine('ACCESS DENIED.', 'red');
+    if (STATE.phase !== 'chat') {
+      if (raw === STATE.correctPassword) {
+        startChat();
+      } else {
+        printLine('ACCESS DENIED.', 'red');
+      }
       return;
     }
 
     const cmd = raw.toLowerCase();
+
     if (cmd === 'buy' || cmd === 'accept') {
       handleBuy();
-    } else if (cmd === 'pass' || cmd === 'reject' || cmd === 'no' || cmd === 'skip' || cmd === 'decline') {
-      handleReject();
-    } else {
-      printLine('[SYS] unknown command. use "buy" or "pass".', 'dim');
+      return;
     }
+
+    if (cmd === 'pass' || cmd === 'reject' || cmd === 'no' || cmd === 'skip' || cmd === 'decline') {
+      handleReject();
+      return;
+    }
+
+    if (cmd === 'inv' || cmd === 'inventory') {
+      showInventory();
+      return;
+    }
+
+    if (cmd.startsWith('sell')) {
+      handleSellCommand(raw);
+      return;
+    }
+
+    printLine('[SYS] unknown command. use "buy", "pass", "inv", or "sell".', 'dim');
   }
 
-  function initLoginScreen() {
-    const data = ensureShared();
-    STATE.sessionId = data.sessionId;
-    STATE.correctPassword = derivePassword(STATE.sessionId);
-    STATE.dead = !!data.dead;
-    STATE.phase = STATE.dead ? 'dead_login' : 'login';
+  async function startChat() {
+    updateStore((draft) => {
+      draft.dead = false;
+      return draft;
+    });
+
+    showApp();
+    el.screen.innerHTML = '';
+    el.cmdInput.type = 'text';
+    el.cmdInput.placeholder = 'buy / pass / inv / sell';
+    el.promptLabel.textContent = '> ';
+    el.loginInput.value = '';
+
+    STATE.phase = 'chat';
+    STATE.busy = false;
+    STATE.rejects = 0;
+    STATE.currentItem = null;
+    nextVendor();
+
     syncHeader();
-    bootCardText(STATE.dead);
-    showLoginScreen(STATE.dead);
-    el.loginInput.focus();
+    updateOfferPanel(null);
+    setPhase('chat');
+
+    bubble('[SYSTEM]: authentication successful', 'system');
+    bubble('[SYSTEM]: secure channel established', 'system');
+    printSep();
+
+    await sleep(220);
+    greetVendor();
+    await sleep(240);
+    await offerItem();
+    updateButtons();
+    el.cmdInput.focus();
+  }
+
+  function loginAttempt() {
+    const typed = el.loginInput.value.trim();
+    el.loginInput.value = '';
+    if (!typed) return;
+
+    if (typed === STATE.correctPassword) {
+      startChat();
+    } else {
+      printLine('ACCESS DENIED. incorrect code.', 'red');
+    }
   }
 
   function refreshFromStorage() {
-    const data = ensureShared();
-    if (data.sessionId !== STATE.sessionId) {
-      STATE.sessionId = data.sessionId;
-      STATE.correctPassword = derivePassword(STATE.sessionId);
-      syncHeader();
-      if (STATE.phase !== 'chat') {
-        bootCardText(!!data.dead);
-        showLoginScreen(!!data.dead);
-      }
+    const store = readStore() || defaultStore();
+
+    if (store.sessionId !== STATE.sessionId) {
+      STATE.sessionId = store.sessionId;
+      STATE.correctPassword = derivePassword(store.sessionId);
+      el.sessionDisplay.textContent = `SESSION: ${STATE.sessionId}`;
+      el.loginSession.textContent = STATE.sessionId;
     }
-    STATE.dead = !!data.dead;
-    el.moneyDisplay.textContent = getMoney().toFixed(2);
-    updateOfferPanel(STATE.currentItem ? { ...STATE.currentItem, price: getCurrentPrice(STATE.currentItem.name, STATE.currentItem.price) } : null);
+
+    if (STATE.phase !== 'chat') {
+      syncHeader();
+    }
+
+    el.moneyDisplay.textContent = round2(store.money).toFixed(2);
+    el.statusRight.textContent = `INVENTORY: ${store.inventory.length}`;
 
     if (STATE.phase === 'chat' && STATE.currentItem) {
       STATE.currentItem.price = getCurrentPrice(STATE.currentItem.name, STATE.currentItem.price);
       updateOfferPanel(STATE.currentItem);
+    } else if (STATE.phase !== 'chat') {
+      updateOfferPanel(null);
     }
   }
 
+  function initLoginScreen() {
+    const store = bootStore();
+    STATE.sessionId = store.sessionId;
+    STATE.correctPassword = derivePassword(store.sessionId);
+    STATE.phase = 'login';
+    STATE.busy = false;
+    STATE.currentItem = null;
+    STATE.rejects = 0;
+
+    syncHeader();
+    showLoginScreen();
+    el.loginInput.focus();
+  }
+
   el.loginInput.addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter') return;
-    loginAttempt();
+    if (e.key === 'Enter') loginAttempt();
   });
 
   el.cmdInput.addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter') return;
-    commandAttempt();
+    if (e.key === 'Enter') commandAttempt();
   });
 
   el.buyBtn.addEventListener('click', handleBuy);
   el.passBtn.addEventListener('click', handleReject);
 
   window.addEventListener('storage', (e) => {
-    if (e.key === SHARED_KEY) refreshFromStorage();
+    if (e.key === STORE_KEY) refreshFromStorage();
   });
 
   setInterval(() => {
-    const data = loadShared();
-    if (!data) return;
-    el.moneyDisplay.textContent = (Number(data.money) || 0).toFixed(2);
-    syncHeader();
-    updateOfferPanel(STATE.currentItem ? { ...STATE.currentItem, price: getCurrentPrice(STATE.currentItem.name, STATE.currentItem.price) } : null);
-  }, 1000);
+    refreshFromStorage();
+  }, 1200);
 
-  // boot
-  const data = ensureShared();
-  STATE.sessionId = data.sessionId;
-  STATE.correctPassword = derivePassword(STATE.sessionId);
-  STATE.dead = !!data.dead;
-  syncHeader();
+  bootStore();
   initLoginScreen();
   refreshFromStorage();
 })();
