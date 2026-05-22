@@ -974,30 +974,33 @@
 
 <script>
 (() => {
+  'use strict';
+
   const SHARED_KEY = 'cs2_shared';
-  const PRICE_LOG_KEY = 'cs2_price_log';
+  const LEGACY_PRICE_LOG_KEY = 'cs2_price_log';
   const TICK_MS = 15 * 60 * 1000;
   const MARKET_EPOCH = Date.UTC(2026, 0, 1, 0, 0, 0);
+  const HISTORY_LIMIT = 180;
 
   const BASE_ITEMS = [
-    {name:'AK-47 | Redline', rarity:'classified', wear:'Field-Tested', basePrice:24.50, float:'0.2341', category:'Rifle'},
-    {name:'AWP | Asiimov', rarity:'covert', wear:'Battle-Scarred', basePrice:67.00, float:'0.7812', category:'Sniper'},
-    {name:'M4A4 | Howl', rarity:'gold', wear:'Minimal Wear', basePrice:1840.00, float:'0.1102', category:'Rifle'},
-    {name:'Karambit | Fade', rarity:'gold', wear:'Factory New', basePrice:2100.00, float:'0.0322', category:'Knife'},
-    {name:'Desert Eagle | Blaze', rarity:'classified', wear:'Factory New', basePrice:412.00, float:'0.0071', category:'Pistol'},
-    {name:'Glock-18 | Fade', rarity:'classified', wear:'Factory New', basePrice:380.00, float:'0.0214', category:'Pistol'},
-    {name:'USP-S | Kill Confirmed', rarity:'covert', wear:'Minimal Wear', basePrice:88.00, float:'0.0981', category:'Pistol'},
-    {name:'M4A1-S | Knight', rarity:'covert', wear:'Field-Tested', basePrice:156.00, float:'0.3211', category:'Rifle'},
-    {name:'AK-47 | Fire Serpent', rarity:'covert', wear:'Well-Worn', basePrice:310.00, float:'0.4422', category:'Rifle'},
-    {name:'Butterfly Knife | Tiger Tooth', rarity:'gold', wear:'Factory New', basePrice:1250.00, float:'0.0099', category:'Knife'},
-    {name:'FAMAS | Valence', rarity:'milspec', wear:'Minimal Wear', basePrice:3.20, float:'0.1301', category:'Rifle'},
-    {name:'Five-SeveN | Monkey Business', rarity:'milspec', wear:'Factory New', basePrice:6.80, float:'0.0512', category:'Pistol'},
-    {name:'MAC-10 | Neon Rider', rarity:'restricted', wear:'Minimal Wear', basePrice:14.00, float:'0.1122', category:'SMG'},
-    {name:'Stiletto Knife | Doppler', rarity:'gold', wear:'Factory New', basePrice:450.00, float:'0.0233', category:'Knife'},
-    {name:'P250 | See Ya Later', rarity:'restricted', wear:'Field-Tested', basePrice:9.50, float:'0.2801', category:'Pistol'},
-    {name:'AUG | Chameleon', rarity:'milspec', wear:'Factory New', basePrice:5.60, float:'0.0712', category:'Rifle'},
-    {name:'SG 553 | Cyrex', rarity:'restricted', wear:'Minimal Wear', basePrice:11.20, float:'0.0933', category:'Rifle'},
-    {name:'M4A4 | Neo-Noir', rarity:'covert', wear:'Field-Tested', basePrice:42.00, float:'0.2801', category:'Rifle'},
+    { name: 'AK-47 | Redline', rarity: 'classified', wear: 'Field-Tested', basePrice: 24.50, float: '0.2341', category: 'Rifle' },
+    { name: 'AWP | Asiimov', rarity: 'covert', wear: 'Battle-Scarred', basePrice: 67.00, float: '0.7812', category: 'Sniper' },
+    { name: 'M4A4 | Howl', rarity: 'gold', wear: 'Minimal Wear', basePrice: 1840.00, float: '0.1102', category: 'Rifle' },
+    { name: 'Karambit | Fade', rarity: 'gold', wear: 'Factory New', basePrice: 2100.00, float: '0.0322', category: 'Knife' },
+    { name: 'Desert Eagle | Blaze', rarity: 'classified', wear: 'Factory New', basePrice: 412.00, float: '0.0071', category: 'Pistol' },
+    { name: 'Glock-18 | Fade', rarity: 'classified', wear: 'Factory New', basePrice: 380.00, float: '0.0214', category: 'Pistol' },
+    { name: 'USP-S | Kill Confirmed', rarity: 'covert', wear: 'Minimal Wear', basePrice: 88.00, float: '0.0981', category: 'Pistol' },
+    { name: 'M4A1-S | Knight', rarity: 'covert', wear: 'Field-Tested', basePrice: 156.00, float: '0.3211', category: 'Rifle' },
+    { name: 'AK-47 | Fire Serpent', rarity: 'covert', wear: 'Well-Worn', basePrice: 310.00, float: '0.4422', category: 'Rifle' },
+    { name: 'Butterfly Knife | Tiger Tooth', rarity: 'gold', wear: 'Factory New', basePrice: 1250.00, float: '0.0099', category: 'Knife' },
+    { name: 'FAMAS | Valence', rarity: 'milspec', wear: 'Minimal Wear', basePrice: 3.20, float: '0.1301', category: 'Rifle' },
+    { name: 'Five-SeveN | Monkey Business', rarity: 'milspec', wear: 'Factory New', basePrice: 6.80, float: '0.0512', category: 'Pistol' },
+    { name: 'MAC-10 | Neon Rider', rarity: 'restricted', wear: 'Minimal Wear', basePrice: 14.00, float: '0.1122', category: 'SMG' },
+    { name: 'Stiletto Knife | Doppler', rarity: 'gold', wear: 'Factory New', basePrice: 450.00, float: '0.0233', category: 'Knife' },
+    { name: 'P250 | See Ya Later', rarity: 'restricted', wear: 'Field-Tested', basePrice: 9.50, float: '0.2801', category: 'Pistol' },
+    { name: 'AUG | Chameleon', rarity: 'milspec', wear: 'Factory New', basePrice: 5.60, float: '0.0712', category: 'Rifle' },
+    { name: 'SG 553 | Cyrex', rarity: 'restricted', wear: 'Minimal Wear', basePrice: 11.20, float: '0.0933', category: 'Rifle' },
+    { name: 'M4A4 | Neo-Noir', rarity: 'covert', wear: 'Field-Tested', basePrice: 42.00, float: '0.2801', category: 'Rifle' },
   ];
 
   const CATEGORY_ORDER = ['All', 'Knife', 'Pistol', 'Rifle', 'SMG', 'Sniper'];
@@ -1011,35 +1014,35 @@
     gold: '#e4ae39',
   };
 
+  const $ = (id) => document.getElementById(id);
   const els = {
-    wallet: document.getElementById('wallet'),
-    walletNote: document.getElementById('wallet-note'),
-    metricItems: document.getElementById('metric-items'),
-    metricValue: document.getElementById('metric-value'),
-    metricPl: document.getElementById('metric-pl'),
-    metricNet: document.getElementById('metric-net'),
-    nextTick: document.getElementById('next-tick'),
-    engineNote: document.getElementById('engine-note'),
-    sessionPill: document.getElementById('session-pill'),
-    tickPill: document.getElementById('tick-pill'),
-    marketPill: document.getElementById('market-pill'),
-    heroCash: document.getElementById('hero-cash'),
-    heroCount: document.getElementById('hero-count'),
-    heroValue: document.getElementById('hero-value'),
-    heroPl: document.getElementById('hero-pl'),
-    statusLeft: document.getElementById('status-left'),
-    statusRight: document.getElementById('status-right'),
-    ticker: document.getElementById('ticker'),
-    inventoryGrid: document.getElementById('inventory-grid'),
-    inventoryEmpty: document.getElementById('inventory-empty'),
-    marketGrid: document.getElementById('market-grid'),
-    logList: document.getElementById('log-list'),
-    search: document.getElementById('search'),
-    filterRow: document.getElementById('filter-row'),
-    sellAllBtn: document.getElementById('sell-all-btn'),
-    refreshBtn: document.getElementById('refresh-btn'),
-    copyMarketBtn: document.getElementById('copy-market-btn'),
-    clearLogBtn: document.getElementById('clear-log-btn'),
+    wallet: $('wallet'),
+    walletNote: $('wallet-note'),
+    metricItems: $('metric-items'),
+    metricValue: $('metric-value'),
+    metricPl: $('metric-pl'),
+    metricNet: $('metric-net'),
+    nextTick: $('next-tick'),
+    sessionPill: $('session-pill'),
+    tickPill: $('tick-pill'),
+    marketPill: $('market-pill'),
+    heroCash: $('hero-cash'),
+    heroCount: $('hero-count'),
+    heroValue: $('hero-value'),
+    heroPl: $('hero-pl'),
+    statusLeft: $('status-left'),
+    statusRight: $('status-right'),
+    ticker: $('ticker'),
+    inventoryGrid: $('inventory-grid'),
+    inventoryEmpty: $('inventory-empty'),
+    marketGrid: $('market-grid'),
+    logList: $('log-list'),
+    search: $('search'),
+    filterRow: $('filter-row'),
+    sellAllBtn: $('sell-all-btn'),
+    refreshBtn: $('refresh-btn'),
+    copyMarketBtn: $('copy-market-btn'),
+    clearLogBtn: $('clear-log-btn'),
   };
 
   const state = {
@@ -1049,26 +1052,33 @@
     currentTick: null,
     prices: {},
     priceLog: [],
-    lastRenderedTick: null,
   };
 
   function safeParse(raw, fallback) {
-    try { return raw ? JSON.parse(raw) : fallback; } catch { return fallback; }
+    try {
+      return raw ? JSON.parse(raw) : fallback;
+    } catch {
+      return fallback;
+    }
   }
+
   function round2(n) {
-    return Math.round(Number(n) * 100) / 100;
+    return Math.round(Number(n || 0) * 100) / 100;
   }
+
   function formatMoney(n) {
-    const val = round2(n || 0);
-    return `$${val.toFixed(2)}`;
+    return `$${round2(n).toFixed(2)}`;
   }
-  function fmtSignedMoney(n) {
-    const val = round2(n || 0);
-    return `${val >= 0 ? '+' : ''}${val.toFixed(2)}`;
+
+  function signMoney(n) {
+    const v = round2(n);
+    return `${v >= 0 ? '+' : ''}${v.toFixed(2)}`;
   }
+
   function clamp(n, min, max) {
     return Math.min(max, Math.max(min, n));
   }
+
   function hash32(str) {
     let h = 2166136261 >>> 0;
     for (let i = 0; i < str.length; i++) {
@@ -1077,6 +1087,7 @@
     }
     return h >>> 0;
   }
+
   function rand01(seedText) {
     let t = hash32(seedText);
     t += t << 13; t ^= t >>> 7;
@@ -1084,22 +1095,135 @@
     t += t << 5;
     return ((t >>> 0) % 1000000) / 1000000;
   }
-  function slug(name) {
-    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+  function escapeHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, (s) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    }[s]));
   }
-  function itemByName(name) {
-    return BASE_ITEMS.find(i => i.name === name);
-  }
+
   function currentTick() {
     return Math.floor((Date.now() - MARKET_EPOCH) / TICK_MS);
   }
+
   function nextTickAt() {
-    const tick = currentTick();
-    return MARKET_EPOCH + (tick + 1) * TICK_MS;
+    return MARKET_EPOCH + (currentTick() + 1) * TICK_MS;
   }
+
   function rarityAccent(rarity) {
     return RARITY_COLORS[rarity] || '#7dffb2';
   }
+
+  function itemByName(name) {
+    return BASE_ITEMS.find((item) => item.name === name);
+  }
+
+  function defaultStore() {
+    return {
+      schemaVersion: 2,
+      sessionId: null,
+      dead: false,
+      money: 0,
+      inventory: [],
+      prices: {},
+      priceLog: [],
+      marketTick: 0,
+      marketUpdatedAt: 0,
+      nextTick: 0,
+    };
+  }
+
+  function normalizeStore(raw) {
+    const base = defaultStore();
+    const src = raw && typeof raw === 'object' ? raw : {};
+    const out = { ...base, ...src };
+
+    out.sessionId = Number.isFinite(Number(out.sessionId)) ? Number(out.sessionId) : null;
+    out.dead = !!out.dead;
+    out.money = Number.isFinite(Number(out.money)) ? round2(out.money) : 0;
+
+    out.inventory = Array.isArray(out.inventory)
+      ? out.inventory
+          .filter((item) => item && typeof item === 'object')
+          .map((item) => ({
+            name: String(item.name || 'Unknown Item'),
+            rarity: String(item.rarity || 'consumer'),
+            wear: String(item.wear || 'Unknown'),
+            price: round2(item.price),
+            float: String(item.float || '0.0000'),
+            boughtAt: round2(item.boughtAt ?? item.price ?? 0),
+            acquiredTime: Number(item.acquiredTime) || Date.now(),
+            id: String(item.id || `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`),
+          }))
+      : [];
+
+    out.prices = out.prices && typeof out.prices === 'object' && !Array.isArray(out.prices) ? out.prices : {};
+    out.priceLog = Array.isArray(out.priceLog) ? out.priceLog : [];
+    out.marketTick = Number.isFinite(Number(out.marketTick)) ? Number(out.marketTick) : 0;
+    out.marketUpdatedAt = Number.isFinite(Number(out.marketUpdatedAt)) ? Number(out.marketUpdatedAt) : 0;
+    out.nextTick = Number.isFinite(Number(out.nextTick)) ? Number(out.nextTick) : 0;
+
+    return out;
+  }
+
+  function readStore() {
+    return normalizeStore(safeParse(localStorage.getItem(SHARED_KEY), null));
+  }
+
+  function writeStore(store) {
+    localStorage.setItem(SHARED_KEY, JSON.stringify(normalizeStore(store)));
+  }
+
+  function updateStore(mutator) {
+    const current = readStore();
+    const draft = JSON.parse(JSON.stringify(current));
+    const next = mutator(draft) || draft;
+    const normalized = normalizeStore(next);
+    writeStore(normalized);
+    return normalized;
+  }
+
+  function ensureStore() {
+    const existing = safeParse(localStorage.getItem(SHARED_KEY), null);
+    if (!existing) {
+      const fresh = defaultStore();
+      fresh.sessionId = Math.floor(1000 + Math.random() * 8999);
+      writeStore(fresh);
+      return fresh;
+    }
+    const normalized = normalizeStore(existing);
+    writeStore(normalized);
+    return normalized;
+  }
+
+  function migrateLegacyLog() {
+    const current = readStore();
+    if ((!current.priceLog || !current.priceLog.length) && localStorage.getItem(LEGACY_PRICE_LOG_KEY)) {
+      const legacy = safeParse(localStorage.getItem(LEGACY_PRICE_LOG_KEY), []);
+      if (Array.isArray(legacy) && legacy.length) {
+        current.priceLog = legacy;
+        writeStore(current);
+      }
+    }
+  }
+
+  function walletBalance() {
+    return round2(readStore().money);
+  }
+
+  function inventory() {
+    return readStore().inventory;
+  }
+
+  function getSessionId() {
+    const sid = readStore().sessionId;
+    return sid ? String(sid) : null;
+  }
+
   function currentPriceFor(item, tick = state.currentTick ?? currentTick()) {
     const base = item.basePrice;
     const phase = (hash32(item.name) % 6283) / 1000;
@@ -1119,114 +1243,6 @@
     return round2(price);
   }
 
-  function loadShared() {
-    const data = safeParse(localStorage.getItem(SHARED_KEY), {});
-    if (!data || typeof data !== 'object') return {};
-    if (!Array.isArray(data.inventory)) data.inventory = [];
-    if (!data.prices || typeof data.prices !== 'object') data.prices = {};
-    if (!Array.isArray(data.priceLog)) data.priceLog = [];
-    if (typeof data.money !== 'number') data.money = 0;
-    return data;
-  }
-
-  function saveShared(mutator) {
-    const data = loadShared();
-    const next = typeof mutator === 'function' ? (mutator(data) || data) : mutator;
-    localStorage.setItem(SHARED_KEY, JSON.stringify(next));
-    return next;
-  }
-
-  function migrateLegacyLog() {
-    const shared = loadShared();
-    if ((!shared.priceLog || !shared.priceLog.length) && localStorage.getItem(PRICE_LOG_KEY)) {
-      const legacy = safeParse(localStorage.getItem(PRICE_LOG_KEY), []);
-      if (Array.isArray(legacy) && legacy.length) {
-        shared.priceLog = legacy;
-        localStorage.setItem(SHARED_KEY, JSON.stringify(shared));
-      }
-    }
-  }
-
-  function inventory() {
-    const data = loadShared();
-    return Array.isArray(data.inventory) ? data.inventory : [];
-  }
-
-  function walletBalance() {
-    const data = loadShared();
-    return Number(data.money || 0);
-  }
-
-  function getSessionId() {
-    const data = loadShared();
-    return data.sessionId || null;
-  }
-
-  function ensureMarketState() {
-    const data = loadShared();
-    const tick = currentTick();
-
-    const previousTick = typeof data.marketTick === 'number' ? data.marketTick : null;
-    const previousPrices = data.prices || {};
-    const nextPrices = {};
-    let moved = 0;
-    let shockCount = 0;
-    const movers = [];
-
-    for (const item of BASE_ITEMS) {
-      const price = currentPriceFor(item, tick);
-      nextPrices[item.name] = price;
-
-      const prev = Number(previousPrices[item.name] ?? item.basePrice);
-      const delta = round2(price - prev);
-      if (Math.abs(delta) >= 0.01) moved++;
-      const shockBand = Math.abs(delta) >= Math.max(10, item.basePrice * 0.08);
-      if (shockBand) shockCount++;
-      movers.push({
-        name: item.name,
-        delta,
-        from: prev,
-        to: price,
-        shock: shockBand,
-      });
-    }
-
-    movers.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
-
-    if (previousTick !== tick) {
-      const tickTime = new Date(nextTickAt() - TICK_MS).toLocaleString();
-      const summary = movers.slice(0, 4).map(m => {
-        const sign = m.delta >= 0 ? '+' : '';
-        return `${m.name} ${sign}${fmtSignedMoney(m.delta)} (${formatMoney(m.from)} → ${formatMoney(m.to)})`;
-      });
-      const logEntry = {
-        type: 'tick',
-        tick,
-        ts: Date.now(),
-        label: tickTime,
-        changed: moved,
-        shockCount,
-        summary,
-        shock: movers.filter(m => m.shock).slice(0, 3).map(m => ({
-          name: m.name,
-          delta: m.delta,
-          to: m.to,
-        })),
-      };
-      data.priceLog = [logEntry, ...data.priceLog].slice(0, 180);
-    }
-
-    data.prices = nextPrices;
-    data.marketTick = tick;
-    data.marketUpdatedAt = Date.now();
-    data.nextTick = nextTickAt();
-    localStorage.setItem(SHARED_KEY, JSON.stringify(data));
-
-    state.currentTick = tick;
-    state.prices = nextPrices;
-    state.priceLog = data.priceLog;
-  }
-
   function priceOf(name) {
     const item = itemByName(name);
     if (!item) return 0;
@@ -1241,71 +1257,74 @@
     return priceOf(item.name);
   }
 
-  function inventoryPnl(item) {
+  function inventoryDelta(item) {
     return round2(inventoryCurrentValue(item) - paidFor(item));
   }
 
-  function ownedCountMap() {
-    const map = new Map();
-    for (const item of inventory()) {
-      map.set(item.name, (map.get(item.name) || 0) + 1);
+  function updateMarketState() {
+    const store = readStore();
+    const tick = currentTick();
+
+    const prevTick = Number.isFinite(Number(store.marketTick)) ? Number(store.marketTick) : null;
+    const prevPrices = store.prices || {};
+    const nextPrices = {};
+    const movers = [];
+    let moved = 0;
+    let shockCount = 0;
+
+    for (const item of BASE_ITEMS) {
+      const price = currentPriceFor(item, tick);
+      nextPrices[item.name] = price;
+
+      const prev = Number(prevPrices[item.name] ?? item.basePrice);
+      const delta = round2(price - prev);
+      if (Math.abs(delta) >= 0.01) moved += 1;
+      const shock = Math.abs(delta) >= Math.max(10, item.basePrice * 0.08);
+      if (shock) shockCount += 1;
+      movers.push({ name: item.name, delta, from: prev, to: price, shock });
     }
-    return map;
-  }
 
-  function syncStats() {
-    const inv = inventory();
-    let value = 0;
-    let paid = 0;
-    for (const item of inv) {
-      value += inventoryCurrentValue(item);
-      paid += paidFor(item);
+    movers.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+
+    if (prevTick !== tick) {
+      const ts = Date.now();
+      const tickStart = nextTickAt() - TICK_MS;
+      const summary = movers.slice(0, 4).map((m) => `${m.name} ${m.delta >= 0 ? '+' : ''}${signMoney(m.delta)} (${formatMoney(m.from)} → ${formatMoney(m.to)})`);
+      const tickEntry = {
+        type: 'tick',
+        tick,
+        ts,
+        label: new Date(tickStart).toLocaleString(),
+        changed: moved,
+        shockCount,
+        summary,
+        shock: movers.filter((m) => m.shock).slice(0, 3).map((m) => ({
+          name: m.name,
+          delta: m.delta,
+          to: m.to,
+        })),
+      };
+      store.priceLog = [tickEntry, ...store.priceLog].slice(0, HISTORY_LIMIT);
     }
-    value = round2(value);
-    paid = round2(paid);
-    const pl = round2(value - paid);
-    const cash = round2(walletBalance());
-    const net = round2(cash + value);
 
-    els.wallet.textContent = formatMoney(cash);
-    els.heroCash.textContent = formatMoney(cash);
-    els.metricItems.textContent = inv.length;
-    els.metricValue.textContent = formatMoney(value);
-    els.metricPl.textContent = `${pl >= 0 ? '+' : ''}${pl.toFixed(2)}`;
-    els.metricPl.style.color = pl >= 0 ? 'var(--green)' : 'var(--red)';
-    els.metricNet.textContent = formatMoney(net);
-    els.heroCount.textContent = String(inv.length);
-    els.heroValue.textContent = formatMoney(value);
-    els.heroPl.textContent = `${pl >= 0 ? '+' : ''}${pl.toFixed(2)}`;
-    els.heroPl.style.color = pl >= 0 ? 'var(--green)' : 'var(--red)';
+    store.prices = nextPrices;
+    store.marketTick = tick;
+    store.marketUpdatedAt = Date.now();
+    store.nextTick = nextTickAt();
 
-    els.sessionPill.textContent = getSessionId() ? String(getSessionId()) : '----';
-    els.tickPill.textContent = String(state.currentTick ?? currentTick());
-    els.walletNote.textContent = getSessionId()
-      ? 'Linked to cs2_terminal.html via shared origin storage.'
-      : 'No session detected yet. Open the terminal first.';
-    els.walletNote.style.color = getSessionId() ? 'var(--muted)' : 'var(--red)';
+    writeStore(store);
 
-    els.nextTick.textContent = new Date(nextTickAt()).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-    els.statusRight.textContent = getSessionId() ? 'SYNCED' : 'WAITING FOR TERMINAL';
-  }
-
-  function renderTicker() {
-    const list = BASE_ITEMS.map(item => {
-      const cur = priceOf(item.name);
-      const delta = round2(cur - item.basePrice);
-      const cls = delta > 0.01 ? 'up' : delta < -0.01 ? 'down' : 'flat';
-      const sign = delta > 0 ? '+' : '';
-      return `<span class="tick"><span class="tick-name">${escapeHtml(item.name)}</span><span class="tick-price">${formatMoney(cur)}</span><span class="tick-delta ${cls}">${sign}${delta.toFixed(2)}</span></span>`;
-    }).join('');
-    els.ticker.innerHTML = list + list;
+    state.currentTick = tick;
+    state.prices = nextPrices;
+    state.priceLog = store.priceLog;
   }
 
   function renderFilters() {
-    els.filterRow.innerHTML = CATEGORY_ORDER.map(cat => `
+    els.filterRow.innerHTML = CATEGORY_ORDER.map((cat) => `
       <button class="chip ${state.filter === cat ? 'active' : ''}" data-filter="${cat}">${cat}</button>
     `).join('');
-    els.filterRow.querySelectorAll('.chip').forEach(btn => {
+
+    els.filterRow.querySelectorAll('[data-filter]').forEach((btn) => {
       btn.addEventListener('click', () => {
         state.filter = btn.dataset.filter;
         render();
@@ -1318,34 +1337,80 @@
     const inFilter = state.filter === 'All' || item.category === state.filter;
     if (!inFilter) return false;
     if (!q) return true;
-    return [
-      item.name,
-      item.wear,
-      item.rarity,
-      item.category,
-    ].some(v => String(v).toLowerCase().includes(q));
+    return [item.name, item.wear, item.rarity, item.category].some((v) => String(v).toLowerCase().includes(q));
+  }
+
+  function syncStats() {
+    const inv = inventory();
+    const cash = walletBalance();
+
+    let value = 0;
+    let paid = 0;
+
+    for (const item of inv) {
+      value += inventoryCurrentValue(item);
+      paid += paidFor(item);
+    }
+
+    value = round2(value);
+    paid = round2(paid);
+    const pl = round2(value - paid);
+    const net = round2(cash + value);
+
+    els.wallet.textContent = formatMoney(cash);
+    els.heroCash.textContent = formatMoney(cash);
+    els.metricItems.textContent = String(inv.length);
+    els.metricValue.textContent = formatMoney(value);
+    els.metricPl.textContent = `${pl >= 0 ? '+' : ''}${pl.toFixed(2)}`;
+    els.metricPl.style.color = pl >= 0 ? 'var(--green)' : 'var(--red)';
+    els.metricNet.textContent = formatMoney(net);
+    els.heroCount.textContent = String(inv.length);
+    els.heroValue.textContent = formatMoney(value);
+    els.heroPl.textContent = `${pl >= 0 ? '+' : ''}${pl.toFixed(2)}`;
+    els.heroPl.style.color = pl >= 0 ? 'var(--green)' : 'var(--red)';
+
+    const sid = getSessionId();
+    els.sessionPill.textContent = sid || '----';
+    els.tickPill.textContent = String(state.currentTick ?? currentTick());
+    els.walletNote.textContent = sid
+      ? 'Linked to cs2_terminal.html via shared origin storage.'
+      : 'No session detected yet. Open the terminal first.';
+    els.walletNote.style.color = sid ? 'var(--muted)' : 'var(--red)';
+    els.nextTick.textContent = new Date(nextTickAt()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    els.statusLeft.textContent = `ENGINE: ACTIVE • UTC TICK ${state.currentTick ?? currentTick()} • NEXT ${new Date(nextTickAt()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    els.statusRight.textContent = sid ? 'SYNCED' : 'WAITING FOR TERMINAL';
+  }
+
+  function renderTicker() {
+    const items = BASE_ITEMS.map((item) => {
+      const cur = priceOf(item.name);
+      const delta = round2(cur - item.basePrice);
+      const cls = delta > 0.01 ? 'up' : delta < -0.01 ? 'down' : 'flat';
+      const sign = delta > 0 ? '+' : '';
+      return `<span class="tick"><span class="tick-name">${escapeHtml(item.name)}</span><span class="tick-price">${formatMoney(cur)}</span><span class="tick-delta ${cls}">${sign}${delta.toFixed(2)}</span></span>`;
+    }).join('');
+    els.ticker.innerHTML = items + items;
   }
 
   function renderInventory() {
-    const inv = inventory();
-    const grouped = [...inv].sort((a, b) => inventoryCurrentValue(b) - inventoryCurrentValue(a));
+    const inv = [...inventory()].sort((a, b) => inventoryCurrentValue(b) - inventoryCurrentValue(a));
     els.inventoryGrid.innerHTML = '';
-    els.inventoryEmpty.classList.toggle('hidden', grouped.length > 0);
 
-    if (!grouped.length) {
+    if (!inv.length) {
       els.inventoryGrid.appendChild(els.inventoryEmpty);
+      els.inventoryEmpty.classList.remove('hidden');
       return;
     }
 
-    grouped.forEach((item, index) => {
+    els.inventoryEmpty.classList.add('hidden');
+
+    for (const item of inv) {
       const cur = inventoryCurrentValue(item);
       const paid = paidFor(item);
-      const delta = round2(cur - paid);
+      const delta = inventoryDelta(item);
       const cls = delta > 0.01 ? 'up' : delta < -0.01 ? 'down' : 'flat';
       const accent = rarityAccent(item.rarity);
-      const rarityLabel = item.rarity.toUpperCase();
-      const sellable = walletBalance() + cur >= 0;
-      const initials = item.name.split(' | ')[0].split(' ').map(v => v[0]).join('').slice(0, 3).toUpperCase();
+      const initials = item.name.split(' | ')[0].split(' ').map((v) => v[0]).join('').slice(0, 3).toUpperCase();
 
       const card = document.createElement('article');
       card.className = 'card';
@@ -1358,7 +1423,7 @@
             <div class="skin-meta">
               <div class="name">${escapeHtml(item.name)}</div>
               <div class="wear">${escapeHtml(item.wear)}</div>
-              <div class="rarity">${escapeHtml(rarityLabel)} • ${escapeHtml(item.category)}</div>
+              <div class="rarity">${escapeHtml(item.rarity.toUpperCase())} • ${escapeHtml(item.category)}</div>
             </div>
           </div>
 
@@ -1376,61 +1441,21 @@
               <span>Market value now</span>
               <strong>${cur >= paid ? 'profit' : 'loss'}</strong>
             </div>
-            <button class="sell-btn" data-sell-id="${escapeAttr(item.id || `${item.name}-${index}`)}" ${sellable ? '' : 'disabled'}>Sell</button>
+            <button class="sell-btn" type="button">Sell</button>
           </div>
         </div>
       `;
       card.querySelector('.sell-btn').addEventListener('click', () => sellItem(item));
       els.inventoryGrid.appendChild(card);
-    });
+    }
   }
 
   function renderMarket() {
-    const items = BASE_ITEMS.filter(itemMatches).sort((a, b) => {
-      const af = priceOf(a.name), bf = priceOf(b.name);
-      return bf - af;
-    });
-    els.marketGrid.innerHTML = items.map(item => {
-      const cur = priceOf(item.name);
-      const delta = round2(cur - item.basePrice);
-      const cls = delta > 0.01 ? 'up' : delta < -0.01 ? 'down' : 'flat';
-      const ownedCount = [...inventory()].filter(i => i.name === item.name).length;
-      const accent = rarityAccent(item.rarity);
-      return `
-        <article class="card" style="--accent: linear-gradient(90deg, ${accent}, rgba(255,255,255,.08)); --accent-color:${accent}">
-          <div class="card-inner">
-            <div class="skin-top">
-              <div class="sigil">${escapeHtml(item.name.split(' | ')[0].slice(0,3).toUpperCase())}</div>
-              <div class="skin-meta">
-                <div class="name">${escapeHtml(item.name)}</div>
-                <div class="wear">${escapeHtml(item.wear)}</div>
-                <div class="rarity">${escapeHtml(item.rarity.toUpperCase())} • ${escapeHtml(item.category)}</div>
-              </div>
-            </div>
+    const items = BASE_ITEMS
+      .filter(itemMatches)
+      .sort((a, b) => priceOf(b.name) - priceOf(a.name));
 
-            <div class="float">Float: ${escapeHtml(item.float)}</div>
-
-            <div class="price-band">
-              <div class="price-row">
-                <div>
-                  <div class="current">${formatMoney(cur)}</div>
-                  <div class="subprice">base ${formatMoney(item.basePrice)} • synced tick ${state.currentTick ?? currentTick()}</div>
-                </div>
-                <div class="delta ${cls}">${delta >= 0 ? '+' : ''}${delta.toFixed(2)}</div>
-              </div>
-              <div class="owned">
-                <span>Owned in vault</span>
-                <strong>${ownedCount}</strong>
-              </div>
-              <div class="owned">
-                <span>Status</span>
-                <strong class="${ownedCount > 0 ? 'has' : ''}">${ownedCount > 0 ? 'AVAILABLE' : 'ON MARKET'}</strong>
-              </div>
-            </div>
-          </div>
-        </article>
-      `;
-    }).join('');
+    els.marketGrid.innerHTML = '';
 
     if (!items.length) {
       els.marketGrid.innerHTML = `
@@ -1439,12 +1464,63 @@
           <p>No items match the current search and category filter.</p>
         </div>
       `;
+      return;
+    }
+
+    const inv = inventory();
+
+    for (const item of items) {
+      const cur = priceOf(item.name);
+      const delta = round2(cur - item.basePrice);
+      const cls = delta > 0.01 ? 'up' : delta < -0.01 ? 'down' : 'flat';
+      const ownedCount = inv.filter((i) => i.name === item.name).length;
+      const accent = rarityAccent(item.rarity);
+      const initials = item.name.split(' | ')[0].slice(0, 3).toUpperCase();
+
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.style.setProperty('--accent', `linear-gradient(90deg, ${accent}, rgba(255,255,255,.08))`);
+      card.style.setProperty('--accent-color', accent);
+      card.innerHTML = `
+        <div class="card-inner">
+          <div class="skin-top">
+            <div class="sigil">${escapeHtml(initials)}</div>
+            <div class="skin-meta">
+              <div class="name">${escapeHtml(item.name)}</div>
+              <div class="wear">${escapeHtml(item.wear)}</div>
+              <div class="rarity">${escapeHtml(item.rarity.toUpperCase())} • ${escapeHtml(item.category)}</div>
+            </div>
+          </div>
+
+          <div class="float">Float: ${escapeHtml(item.float)}</div>
+
+          <div class="price-band">
+            <div class="price-row">
+              <div>
+                <div class="current">${formatMoney(cur)}</div>
+                <div class="subprice">base ${formatMoney(item.basePrice)} • synced tick ${state.currentTick ?? currentTick()}</div>
+              </div>
+              <div class="delta ${cls}">${delta >= 0 ? '+' : ''}${delta.toFixed(2)}</div>
+            </div>
+            <div class="owned">
+              <span>Owned in vault</span>
+              <strong>${ownedCount}</strong>
+            </div>
+            <div class="owned">
+              <span>Status</span>
+              <strong class="${ownedCount > 0 ? 'has' : ''}">${ownedCount > 0 ? 'AVAILABLE' : 'ON MARKET'}</strong>
+            </div>
+          </div>
+        </div>
+      `;
+      els.marketGrid.appendChild(card);
     }
   }
 
   function renderLog() {
     const log = state.priceLog || [];
     els.logList.innerHTML = '';
+
     if (!log.length) {
       els.logList.innerHTML = `
         <div class="empty">
@@ -1455,14 +1531,16 @@
       return;
     }
 
-    log.slice(0, 40).forEach(entry => {
-      const el = document.createElement('div');
-      el.className = 'log-item';
+    for (const entry of log.slice(0, 40)) {
+      const item = document.createElement('div');
+      item.className = 'log-item';
+
       if (entry.type === 'tick') {
         const shockText = entry.shock && entry.shock.length
-          ? entry.shock.map(s => `${s.name} ${s.delta >= 0 ? '+' : ''}${s.delta.toFixed(2)}`).join(' • ')
+          ? entry.shock.map((s) => `${s.name} ${s.delta >= 0 ? '+' : ''}${s.delta.toFixed(2)}`).join(' • ')
           : 'No rare shocks.';
-        el.innerHTML = `
+
+        item.innerHTML = `
           <div class="log-head">
             <div class="log-title">Market Tick #${entry.tick}</div>
             <div class="log-time">${new Date(entry.ts).toLocaleString()}</div>
@@ -1474,7 +1552,7 @@
           </div>
         `;
       } else if (entry.type === 'sale') {
-        el.innerHTML = `
+        item.innerHTML = `
           <div class="log-head">
             <div class="log-title">Sale Recorded</div>
             <div class="log-time">${new Date(entry.ts).toLocaleString()}</div>
@@ -1484,7 +1562,7 @@
           </div>
         `;
       } else {
-        el.innerHTML = `
+        item.innerHTML = `
           <div class="log-head">
             <div class="log-title">${escapeHtml(entry.title || 'Event')}</div>
             <div class="log-time">${new Date(entry.ts || Date.now()).toLocaleString()}</div>
@@ -1492,134 +1570,127 @@
           <div class="log-body">${escapeHtml(entry.body || '')}</div>
         `;
       }
-      els.logList.appendChild(el);
-    });
-  }
 
-  function persistAndSync(mutator) {
-    const data = saveShared(mutator);
-    state.priceLog = data.priceLog || [];
-    return data;
-  }
-
-  function sellItem(item) {
-    const data = loadShared();
-    const idx = (data.inventory || []).findIndex(inv => (inv.id && item.id && inv.id === item.id) || inv.name === item.name && inv.acquiredTime === item.acquiredTime);
-    if (idx === -1) return;
-
-    const salePrice = priceOf(item.name);
-    data.money = round2(Number(data.money || 0) + salePrice);
-    data.inventory.splice(idx, 1);
-    data.priceLog = [
-      {
-        type: 'sale',
-        ts: Date.now(),
-        name: item.name,
-        price: salePrice,
-      },
-      ...(data.priceLog || []),
-    ].slice(0, 180);
-
-    localStorage.setItem(SHARED_KEY, JSON.stringify(data));
-    state.priceLog = data.priceLog;
-    render();
-  }
-
-  function sellAll() {
-    const data = loadShared();
-    const inv = Array.isArray(data.inventory) ? data.inventory : [];
-    if (!inv.length) return;
-    let earned = 0;
-    const lines = [];
-    for (const item of inv) {
-      const p = priceOf(item.name);
-      earned += p;
-      lines.push(`${item.name} @ ${formatMoney(p)}`);
+      els.logList.appendChild(item);
     }
-    data.money = round2(Number(data.money || 0) + earned);
-    data.inventory = [];
-    data.priceLog = [
-      {
-        type: 'event',
-        title: 'Portfolio Liquidated',
-        body: `Sold ${inv.length} item(s) for ${formatMoney(earned)}.`,
-        ts: Date.now(),
-      },
-      ...(data.priceLog || []),
-    ].slice(0, 180);
-    localStorage.setItem(SHARED_KEY, JSON.stringify(data));
-    state.priceLog = data.priceLog;
-    render();
   }
 
-  function copyMarketList() {
-    const text = BASE_ITEMS.map(item => {
-      const cur = priceOf(item.name);
-      return `${item.name} — ${formatMoney(cur)} (base ${formatMoney(item.basePrice)})`;
-    }).join('\n');
-    navigator.clipboard?.writeText(text).then(() => {
-      flashStatus('COPIED MARKET LIST');
-    }).catch(() => {
-      flashStatus('COPY FAILED');
-    });
+  function render() {
+    updateMarketState();
+    renderFilters();
+    syncStats();
+    renderTicker();
+
+    document.getElementById('tab-inventory').classList.toggle('hidden', state.tab !== 'inventory');
+    document.getElementById('tab-market').classList.toggle('hidden', state.tab !== 'market');
+    document.getElementById('tab-log').classList.toggle('hidden', state.tab !== 'log');
+
+    if (state.tab === 'inventory') renderInventory();
+    if (state.tab === 'market') renderMarket();
+    if (state.tab === 'log') renderLog();
   }
 
-  function clearLocalLog() {
-    const data = loadShared();
-    data.priceLog = [];
-    localStorage.setItem(SHARED_KEY, JSON.stringify(data));
-    state.priceLog = [];
+  function setTab(tab) {
+    state.tab = tab;
+    document.querySelectorAll('.tab').forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tab));
+    document.querySelectorAll('.nav-btn[data-tab-btn]').forEach((btn) => btn.classList.toggle('active', btn.dataset.tabBtn === tab));
     render();
   }
 
   function flashStatus(text) {
     els.statusRight.textContent = text;
     setTimeout(() => {
-      els.statusRight.textContent = 'READY';
+      els.statusRight.textContent = readStore().sessionId ? 'SYNCED' : 'WAITING FOR TERMINAL';
     }, 1400);
   }
 
-  function setTab(tab) {
-    state.tab = tab;
-    document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-    document.querySelectorAll('.nav-btn[data-tab-btn]').forEach(b => b.classList.toggle('active', b.dataset.tabBtn === tab));
-    document.getElementById('tab-inventory').classList.toggle('hidden', tab !== 'inventory');
-    document.getElementById('tab-market').classList.toggle('hidden', tab !== 'market');
-    document.getElementById('tab-log').classList.toggle('hidden', tab !== 'log');
+  function sellItem(item) {
+    const store = readStore();
+    const idx = store.inventory.findIndex((inv) => inv.id === item.id || (inv.name === item.name && inv.acquiredTime === item.acquiredTime));
+    if (idx === -1) return;
+
+    const salePrice = priceOf(item.name);
+    store.money = round2(store.money + salePrice);
+    store.inventory.splice(idx, 1);
+    store.priceLog = [
+      {
+        type: 'sale',
+        ts: Date.now(),
+        name: item.name,
+        price: salePrice,
+      },
+      ...store.priceLog,
+    ].slice(0, HISTORY_LIMIT);
+
+    writeStore(store);
+    state.priceLog = store.priceLog;
     render();
   }
 
-  function render() {
-    renderFilters();
-    syncStats();
-    renderTicker();
-    if (state.tab === 'inventory') renderInventory();
-    if (state.tab === 'market') renderMarket();
-    if (state.tab === 'log') renderLog();
-    els.statusLeft.textContent = `ENGINE: ACTIVE • UTC TICK ${state.currentTick ?? currentTick()} • NEXT ${new Date(nextTickAt()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+  function sellAll() {
+    const store = readStore();
+    if (!store.inventory.length) return;
+
+    let earned = 0;
+    for (const item of store.inventory) earned += priceOf(item.name);
+
+    store.money = round2(store.money + earned);
+    const soldCount = store.inventory.length;
+    store.inventory = [];
+    store.priceLog = [
+      {
+        type: 'event',
+        title: 'Portfolio Liquidated',
+        body: `Sold ${soldCount} item(s) for ${formatMoney(earned)}.`,
+        ts: Date.now(),
+      },
+      ...store.priceLog,
+    ].slice(0, HISTORY_LIMIT);
+
+    writeStore(store);
+    state.priceLog = store.priceLog;
+    render();
   }
 
-  function escapeHtml(str) {
-    return String(str ?? '').replace(/[&<>"']/g, s => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;',
-    }[s]));
+  function copyMarketList() {
+    const text = BASE_ITEMS
+      .map((item) => `${item.name} — ${formatMoney(priceOf(item.name))} (base ${formatMoney(item.basePrice)})`)
+      .join('\n');
+
+    const maybePromise = navigator.clipboard?.writeText(text);
+    if (maybePromise && typeof maybePromise.then === 'function') {
+      maybePromise.then(() => flashStatus('COPIED MARKET LIST')).catch(() => flashStatus('COPY FAILED'));
+    } else {
+      flashStatus('COPY UNAVAILABLE');
+    }
   }
-  function escapeAttr(str) {
-    return escapeHtml(str).replace(/`/g, '&#96;');
+
+  function clearLocalLog() {
+    const store = readStore();
+    store.priceLog = [];
+    writeStore(store);
+    state.priceLog = [];
+    render();
+    flashStatus('LOG CLEARED');
+  }
+
+  function updateCountdown() {
+    const remaining = Math.max(0, nextTickAt() - Date.now());
+    const mm = Math.floor(remaining / 60000);
+    const ss = Math.floor((remaining % 60000) / 1000);
+    els.nextTick.textContent = `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
   }
 
   function boot() {
     migrateLegacyLog();
-    ensureMarketState();
+    ensureStore();
+    updateMarketState();
 
-    document.querySelectorAll('.tab').forEach(btn => {
+    document.querySelectorAll('.tab').forEach((btn) => {
       btn.addEventListener('click', () => setTab(btn.dataset.tab));
     });
-    document.querySelectorAll('.nav-btn[data-tab-btn]').forEach(btn => {
+
+    document.querySelectorAll('.nav-btn[data-tab-btn]').forEach((btn) => {
       btn.addEventListener('click', () => setTab(btn.dataset.tabBtn));
     });
 
@@ -1630,7 +1701,7 @@
 
     els.sellAllBtn.addEventListener('click', sellAll);
     els.refreshBtn.addEventListener('click', () => {
-      ensureMarketState();
+      updateMarketState();
       render();
       flashStatus('REFRESHED');
     });
@@ -1638,18 +1709,16 @@
     els.clearLogBtn.addEventListener('click', clearLocalLog);
 
     window.addEventListener('storage', (e) => {
-      if (e.key === SHARED_KEY || e.key === PRICE_LOG_KEY) {
-        ensureMarketState();
+      if (e.key === SHARED_KEY || e.key === LEGACY_PRICE_LOG_KEY) {
+        updateMarketState();
         render();
       }
     });
 
     setInterval(() => {
       const prevTick = state.currentTick;
-      ensureMarketState();
-      if (state.currentTick !== prevTick) {
-        flashStatus('NEW MARKET TICK');
-      }
+      updateMarketState();
+      if (state.currentTick !== prevTick) flashStatus('NEW MARKET TICK');
       syncStats();
       updateCountdown();
       if (state.tab === 'inventory') renderInventory();
@@ -1659,13 +1728,6 @@
 
     render();
     updateCountdown();
-  }
-
-  function updateCountdown() {
-    const remaining = Math.max(0, nextTickAt() - Date.now());
-    const mm = Math.floor(remaining / 60000);
-    const ss = Math.floor((remaining % 60000) / 1000);
-    els.nextTick.textContent = `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
   }
 
   boot();
