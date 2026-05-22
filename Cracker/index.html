@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS2 // KEYGEN UTILITY v1.0</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--green:#00ff41;--dim:#00882a;--red:#ff3333;--yellow:#ffcc00;--panel:#070f09;--border:#0f2e14;--text:#b8ffb8}
+  html,body{height:100%;background:#050a06;color:var(--green);font-family:'Share Tech Mono',monospace;display:flex;align-items:center;justify-content:center}
+  body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.12) 2px,rgba(0,0,0,0.12) 4px);pointer-events:none;z-index:999}
+  body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.75) 100%);pointer-events:none;z-index:998}
+  .app{width:720px;max-width:98vw;background:var(--panel);border:1px solid var(--border);box-shadow:0 0 30px rgba(0,255,65,0.07);display:flex;flex-direction:column;max-height:96vh;overflow:hidden}
+  .title-bar{background:#04100a;border-bottom:1px solid var(--border);padding:6px 14px;display:flex;align-items:center;gap:10px;font-size:10px;color:var(--dim);letter-spacing:2px;text-transform:uppercase}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--dim);box-shadow:0 0 6px var(--green);animation:blink 2.5s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+  .title-right{margin-left:auto;font-size:9px;opacity:0.4}
+  .body{flex:1;overflow-y:auto;padding:20px 22px;scrollbar-width:thin;scrollbar-color:var(--dim) transparent}
+  .wallet{border:1px solid #0f3a18;background:rgba(0,40,10,0.4);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+  .wallet-amount{font-family:'VT323',monospace;font-size:38px;color:var(--yellow);line-height:1}
+  .wallet-label{font-size:11px;color:var(--dim);letter-spacing:2px;text-transform:uppercase}
+  .wallet-sub{font-size:10px;color:#1e5020;margin-top:2px}
+  .section-title{font-size:10px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:10px;border-left:2px solid var(--dim);padding-left:8px}
+  .tier-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+  .tier{border:1px solid var(--border);padding:10px 12px;background:rgba(0,20,5,0.4);cursor:pointer;transition:border-color 0.15s,background 0.15s}
+  .tier:hover{border-color:var(--dim);background:rgba(0,30,8,0.6)}
+  .tier.selected{border-color:var(--green);background:rgba(0,40,10,0.6)}
+  .tier-name{font-size:11px;color:var(--yellow);margin-bottom:2px}
+  .tier-price{font-family:'VT323',monospace;font-size:24px;color:var(--green)}
+  .tier-desc{font-size:10px;color:var(--dim);margin-top:3px}
+  .input-row{display:flex;gap:10px;margin-bottom:20px}
+  .input-wrap{flex:1;border:1px solid var(--border);background:#040d06;padding:10px 14px;display:flex;align-items:center;gap:8px}
+  .input-wrap label{font-size:11px;color:var(--dim);white-space:nowrap}
+  .input-wrap input{flex:1;background:transparent;border:none;outline:none;color:var(--green);font-family:'Share Tech Mono',monospace;font-size:15px;caret-color:var(--green)}
+  .input-wrap input::placeholder{color:#1a4020}
+  .btn{border:1px solid var(--dim);background:#030d06;color:var(--green);font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;padding:0 18px;cursor:pointer;transition:background 0.15s}
+  .btn:hover{background:#0a2a10}
+  .btn.buy-btn{border-color:#22aa55;color:#00ff88}
+  .btn.buy-btn:hover{background:#052010}
+  .btn.buy-btn:disabled{border-color:#1a3a1f;color:#1a5020;cursor:not-allowed;background:transparent}
+  .result-box{border:1px solid #0f3a18;background:rgba(0,30,8,0.5);padding:16px 18px;margin-bottom:20px;min-height:80px}
+  .result-placeholder{color:#1a4020;font-size:12px}
+  .result-session{font-size:11px;color:var(--dim);margin-bottom:6px;letter-spacing:1px}
+  .result-password{font-family:'VT323',monospace;font-size:52px;color:var(--green);letter-spacing:10px;line-height:1;text-shadow:0 0 20px rgba(0,255,65,0.4)}
+  .result-password.locked{filter:blur(6px);color:#005518}
+  .result-cost{font-size:11px;color:var(--dim);margin-top:6px}
+  .result-status{font-size:12px;margin-top:8px}
+  .result-status.ok{color:#00ff88}
+  .result-status.err{color:var(--red)}
+  .result-status.warn{color:var(--yellow)}
+  .history-table{width:100%;border-collapse:collapse;font-size:12px}
+  .history-table th{text-align:left;padding:5px 10px;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;border-bottom:1px solid var(--border)}
+  .history-table td{padding:6px 10px;border-bottom:1px solid #081508;color:var(--text)}
+  .history-table tr:last-child td{border-bottom:none}
+  .td-pass{font-family:'VT323',monospace;font-size:22px;color:var(--green);letter-spacing:3px}
+  .td-cost{color:var(--yellow)}
+  .td-session{color:var(--dim)}
+  .history-empty{color:#1a4020;font-size:12px;padding:10px 0}
+  .sep{border:none;border-top:1px solid var(--border);margin:18px 0}
+  .status-bar{border-top:1px solid var(--border);padding:4px 14px;display:flex;justify-content:space-between;font-size:9px;color:#1a4020;letter-spacing:1px;background:#03090a}
+  .live{color:var(--dim)}
+  @keyframes glitch{0%{transform:translate(0);filter:none}20%{transform:translate(-3px,1px);filter:hue-rotate(90deg)}40%{transform:translate(3px,-1px);filter:brightness(2)}60%{transform:translate(-2px,2px);filter:none}80%{transform:translate(2px,0);filter:hue-rotate(180deg)}100%{transform:translate(0);filter:none}}
+  .glitch{animation:glitch 0.08s infinite}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="title-bar">
+    <div class="dot"></div>
+    <span>CS2 KEYGEN UTILITY v1.0 // SESSION DECODER</span>
+    <span class="title-right">LINKED: cs2_shared localStorage</span>
+  </div>
+  <div class="body">
+    <div class="wallet">
+      <div>
+        <div class="wallet-label">Available Balance</div>
+        <div class="wallet-amount" id="wallet-amount">$0.00</div>
+        <div class="wallet-sub" id="wallet-sub">earned by wasting the vendor's time</div>
+      </div>
+      <div style="font-size:28px;opacity:0.3">💰</div>
+    </div>
+
+    <div class="section-title">Select Decode Package</div>
+    <div class="tier-grid" id="tier-grid">
+      <div class="tier selected" data-tier="0">
+        <div class="tier-name">BASIC DECODE</div>
+        <div class="tier-price">$5.00</div>
+        <div class="tier-desc">Reveals the password. No frills.</div>
+      </div>
+      <div class="tier" data-tier="1">
+        <div class="tier-name">VERIFIED DECODE</div>
+        <div class="tier-price">$12.00</div>
+        <div class="tier-desc">Password + session integrity check.</div>
+      </div>
+      <div class="tier" data-tier="2">
+        <div class="tier-name">PRIORITY DECODE</div>
+        <div class="tier-price">$25.00</div>
+        <div class="tier-desc">Instant + logged to history forever.</div>
+      </div>
+      <div class="tier" data-tier="3">
+        <div class="tier-name">GHOST DECODE</div>
+        <div class="tier-price">$40.00</div>
+        <div class="tier-desc">No history entry. Untraceable.</div>
+      </div>
+    </div>
+
+    <div class="section-title">Target Session</div>
+    <div class="input-row">
+      <div class="input-wrap">
+        <label>SESSION ID ›</label>
+        <input type="number" id="session-input" placeholder="e.g. 4812" min="1000" max="9999"/>
+      </div>
+      <button class="btn" id="autofill-btn">AUTO-FILL</button>
+      <button class="btn buy-btn" id="decode-btn">DECODE ▶</button>
+    </div>
+
+    <div class="result-box" id="result-box">
+      <div class="result-placeholder" id="result-placeholder">// awaiting session input...</div>
+      <div id="result-content" style="display:none">
+        <div class="result-session" id="result-session"></div>
+        <div class="result-password locked" id="result-password">????</div>
+        <div class="result-cost" id="result-cost"></div>
+        <div class="result-status" id="result-status"></div>
+      </div>
+    </div>
+
+    <hr class="sep">
+
+    <div class="section-title">Decode History <span id="history-count" style="color:#1a5020">(0)</span></div>
+    <div class="history-empty" id="history-empty">No decodes purchased yet.</div>
+    <table class="history-table" id="history-table" style="display:none">
+      <thead><tr><th>SESSION</th><th>PASSWORD</th><th>PACKAGE</th><th>COST</th><th>TIME</th></tr></thead>
+      <tbody id="history-body"></tbody>
+    </table>
+  </div>
+  <div class="status-bar">
+    <span>ALGORITHM: <span class="live">ACTIVE</span> // KEY: cs2_shared</span>
+    <span id="status-time"></span>
+  </div>
+</div>
+<script>
+const SHARED_KEY  = 'cs2_shared';
+const CRACKER_KEY = 'cs2_cracker_data';
+
+function derivePassword(sid) { return String((sid*31+7)%9999).padStart(4,'0'); }
+
+function loadShared() { try{return JSON.parse(localStorage.getItem(SHARED_KEY))||null}catch(e){return null} }
+function saveShared(o) { localStorage.setItem(SHARED_KEY,JSON.stringify(o)); }
+function getMoney() { const s=loadShared(); return s?(s.money||0):0; }
+function setMoney(v) { const s=loadShared()||{}; s.money=Math.max(0,Math.round(v*100)/100); saveShared(s); }
+function loadCracker() { try{return JSON.parse(localStorage.getItem(CRACKER_KEY))||{history:[]}}catch(e){return{history:[]}} }
+function saveCracker(d) { localStorage.setItem(CRACKER_KEY,JSON.stringify(d)); }
+
+const TIERS=[
+  {name:'BASIC DECODE',    price:5.00,  ghost:false, verified:false},
+  {name:'VERIFIED DECODE', price:12.00, ghost:false, verified:true},
+  {name:'PRIORITY DECODE', price:25.00, ghost:false, verified:true},
+  {name:'GHOST DECODE',    price:40.00, ghost:true,  verified:true},
+];
+let selectedTier=0;
+
+const walletAmount  = document.getElementById('wallet-amount');
+const walletSub     = document.getElementById('wallet-sub');
+const sessionInput  = document.getElementById('session-input');
+const decodeBtn     = document.getElementById('decode-btn');
+const autofillBtn   = document.getElementById('autofill-btn');
+const resultPlaceholder = document.getElementById('result-placeholder');
+const resultContent = document.getElementById('result-content');
+const resultSession = document.getElementById('result-session');
+const resultPassword= document.getElementById('result-password');
+const resultCost    = document.getElementById('result-cost');
+const resultStatus  = document.getElementById('result-status');
+const historyEmpty  = document.getElementById('history-empty');
+const historyTable  = document.getElementById('history-table');
+const historyBody   = document.getElementById('history-body');
+const historyCount  = document.getElementById('history-count');
+const app           = document.getElementById('app');
+
+function refreshWallet() {
+  const money = getMoney();
+  walletAmount.textContent = '$'+money.toFixed(2);
+  const ts = loadShared();
+  if (!ts) { walletSub.style.color='#aa3333'; walletSub.textContent='⚠ terminal not found — open cs2_terminal.html first'; }
+  else { walletSub.style.color=''; walletSub.textContent='earned by wasting the vendor\'s time'; }
+}
+
+document.getElementById('tier-grid').addEventListener('click', e=>{
+  const t=e.target.closest('[data-tier]'); if(!t) return;
+  selectedTier=parseInt(t.dataset.tier);
+  document.querySelectorAll('.tier').forEach(el=>el.classList.toggle('selected',el===t));
+});
+
+autofillBtn.addEventListener('click',()=>{
+  const ts=loadShared();
+  if(!ts||!ts.sessionId){flash(autofillBtn,'⚠ NO TERMINAL');return;}
+  sessionInput.value=ts.sessionId; flash(autofillBtn,'✓ FILLED');
+});
+
+function flash(btn,text){const o=btn.textContent;btn.textContent=text;setTimeout(()=>btn.textContent=o,1200);}
+
+decodeBtn.addEventListener('click',()=>{
+  const rawId=parseInt(sessionInput.value);
+  if(!rawId||rawId<1000||rawId>9999){showResult(null,'err','Invalid session ID. Must be 4 digits (1000–9999).',null,null);return;}
+  const tier=TIERS[selectedTier];
+  const money=getMoney();
+  if(money<tier.price){showResult(rawId,'err',`Insufficient funds. Need $${tier.price.toFixed(2)}, have $${money.toFixed(2)}. Go reject more items.`,null,null);return;}
+  setMoney(money-tier.price);
+  refreshWallet();
+  const password=derivePassword(rawId);
+  let statusMsg='',statusCls='ok';
+  const ts=loadShared();
+  if(tier.verified&&ts){
+    if(ts.sessionId===rawId){statusMsg='✓ Session verified against live terminal — this is the CURRENT active session.';}
+    else{statusMsg=`⚠ Session ${rawId} differs from live session (${ts.sessionId}). May be stale.`;statusCls='warn';}
+  } else {
+    statusMsg=`✓ Decoded. Package: ${tier.name}.`;
+  }
+  if(!tier.ghost){
+    const d=loadCracker();
+    d.history.unshift({sessionId:rawId,password,tier:tier.name,cost:tier.price,time:new Date().toLocaleTimeString()});
+    saveCracker(d);
+    renderHistory();
+  }
+  showResult(rawId,statusCls,statusMsg,password,tier);
+});
+
+function showResult(sessionId,statusCls,statusMsg,password,tier){
+  resultPlaceholder.style.display='none';
+  resultContent.style.display='block';
+  resultSession.textContent=sessionId?`SESSION: ${sessionId}  //  PACKAGE: ${tier?tier.name:'—'}`:'INPUT ERROR';
+  if(password){
+    resultPassword.classList.remove('locked');
+    resultPassword.textContent='????';
+    let r=0,total=14;
+    const iv=setInterval(()=>{
+      if(r>=total){clearInterval(iv);resultPassword.textContent=password;return;}
+      resultPassword.textContent=Array.from({length:4},(_,i)=>r>(total*(i+1)/4)?password[i]:Math.floor(Math.random()*10)).join('');
+      r++;
+    },55);
+    resultCost.textContent=`Cost deducted: -$${tier.price.toFixed(2)}  //  New balance: $${getMoney().toFixed(2)}`;
+  } else {
+    resultPassword.classList.add('locked');
+    resultPassword.textContent='????';
+    resultCost.textContent='';
+  }
+  resultStatus.className='result-status '+(statusCls||'err');
+  resultStatus.textContent=statusMsg;
+  app.classList.add('glitch');
+  setTimeout(()=>app.classList.remove('glitch'),200);
+}
+
+function renderHistory(){
+  const d=loadCracker();
+  const h=d.history;
+  historyCount.textContent=`(${h.length})`;
+  if(h.length===0){historyEmpty.style.display='block';historyTable.style.display='none';return;}
+  historyEmpty.style.display='none';
+  historyTable.style.display='table';
+  historyBody.innerHTML=h.map(e=>`<tr>
+    <td class="td-session">${e.sessionId}</td>
+    <td class="td-pass">${e.password}</td>
+    <td style="color:#1e8040;font-size:10px">${e.tier}</td>
+    <td class="td-cost">$${e.cost.toFixed(2)}</td>
+    <td style="color:#1e5020;font-size:10px">${e.time}</td>
+  </tr>`).join('');
+}
+
+setInterval(()=>{document.getElementById('status-time').textContent=new Date().toLocaleTimeString();},1000);
+setInterval(refreshWallet,1500);
+refreshWallet();
+renderHistory();
+document.getElementById('status-time').textContent=new Date().toLocaleTimeString();
+</script>
+</body>
+</html>
