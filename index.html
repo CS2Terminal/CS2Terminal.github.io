@@ -1,356 +1,1334 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CS2 TERMINAL v4.1.2</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
-  * { margin:0; padding:0; box-sizing:border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;700&family=Share+Tech+Mono&display=swap');
+
   :root {
-    --green:#00ff41; --dim:#00aa2a; --red:#ff3333;
-    --yellow:#ffcc00; --panel:#0d1a0f; --border:#1a3a1f; --text:#c8ffc8;
+    --bg: #050607;
+    --panel: rgba(10, 17, 20, 0.92);
+    --panel-2: rgba(7, 12, 15, 0.92);
+    --line: rgba(255,255,255,0.07);
+    --line-strong: rgba(0, 255, 128, 0.16);
+    --green: #4dff9a;
+    --green-dim: #1e8c53;
+    --green-deep: #0f5d36;
+    --red: #ff4f5d;
+    --yellow: #ffd56a;
+    --text: #d7f2e0;
+    --muted: #8a9d95;
+    --blue: #6ea8ff;
+    --shadow: 0 0 40px rgba(0,255,140,.08), inset 0 0 30px rgba(0,0,0,.55);
   }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
   body {
-    background:#0a0a0a; color:var(--green);
-    font-family:'Share Tech Mono',monospace;
-    min-height:100vh; display:flex; align-items:center; justify-content:center;
-    overflow:hidden;
+    background:
+      radial-gradient(circle at 50% 45%, rgba(27, 49, 40, 0.35), transparent 36%),
+      radial-gradient(circle at 50% 50%, rgba(0, 255, 140, 0.08), transparent 70%),
+      linear-gradient(180deg, #050607 0%, #060809 100%);
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    overflow: hidden;
   }
+
   body::before {
-    content:''; position:fixed; inset:0; pointer-events:none; z-index:999;
-    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.15) 2px,rgba(0,0,0,0.15) 4px);
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 30;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(255,255,255,0.02) 0,
+      rgba(255,255,255,0.02) 1px,
+      rgba(0,0,0,0.00) 3px,
+      rgba(0,0,0,0.00) 4px
+    );
+    mix-blend-mode: screen;
   }
+
   body::after {
-    content:''; position:fixed; inset:0; pointer-events:none; z-index:998;
-    background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,0.7) 100%);
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 31;
+    background: radial-gradient(ellipse at center, transparent 48%, rgba(0,0,0,0.70) 100%);
   }
-  .terminal {
-    width:860px; max-width:98vw; background:var(--panel);
-    border:1px solid var(--border);
-    box-shadow:0 0 20px rgba(0,255,65,0.1),0 0 60px rgba(0,255,65,0.05),inset 0 0 30px rgba(0,0,0,0.5);
-    display:flex; flex-direction:column; height:92vh; overflow:hidden;
+
+  .shell {
+    width: min(1120px, 98vw);
+    height: min(92vh, 980px);
+    margin: auto;
+    position: relative;
+    top: 4vh;
+    border: 1px solid rgba(102, 255, 172, 0.18);
+    background: linear-gradient(180deg, rgba(7,11,13,0.98), rgba(4,6,8,0.98));
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-  .title-bar {
-    background:#0a150b; border-bottom:1px solid var(--border);
-    padding:6px 14px; display:flex; align-items:center; gap:10px;
-    font-size:11px; color:var(--dim); letter-spacing:2px; text-transform:uppercase;
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(13,20,22,0.95), rgba(8,12,14,0.95));
+    color: var(--green-dim);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 11px;
+    user-select: none;
   }
-  .dot { width:8px; height:8px; border-radius:50%; background:var(--dim); box-shadow:0 0 6px var(--green); animation:blink 2s infinite; }
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
-  .title-bar-right { margin-left:auto; font-size:10px; opacity:0.5; }
-  .screen { flex:1; overflow-y:auto; padding:20px; scroll-behavior:smooth; }
-  .screen::-webkit-scrollbar{width:4px}
-  .screen::-webkit-scrollbar-thumb{background:var(--dim)}
-  .line { line-height:1.6; margin-bottom:2px; font-size:14px; animation:fadein 0.1s ease; }
-  @keyframes fadein{from{opacity:0}to{opacity:1}}
-  .line.dim{color:var(--dim);font-size:12px}
-  .line.red{color:var(--red)}
-  .line.yellow{color:var(--yellow)}
-  .line.white{color:var(--text)}
-  .line.big{font-family:'VT323',monospace;font-size:22px;color:var(--green)}
-  .line.sep{color:#1e4a22}
+
+  .topbar .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: blink 2s infinite;
+    flex: 0 0 auto;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.28} }
+
+  .topbar-title {
+    color: var(--text);
+    opacity: .92;
+  }
+
+  .topbar-right {
+    margin-left: auto;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    color: #6f8b7b;
+    white-space: nowrap;
+  }
+
+  .badge {
+    padding: 3px 8px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    border-radius: 999px;
+    color: var(--yellow);
+  }
+
+  .workspace {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1.18fr 0.82fr;
+    gap: 0;
+    background:
+      radial-gradient(circle at 70% 30%, rgba(0,255,140,0.03), transparent 18%),
+      linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.0));
+  }
+
+  .screen {
+    min-width: 0;
+    min-height: 0;
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, rgba(6,10,12,0.84), rgba(4,6,8,0.95));
+  }
+
+  .screen-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.02);
+    color: #85b39b;
+    letter-spacing: 1px;
+    font-size: 10px;
+    text-transform: uppercase;
+  }
+
+  .screen-body {
+    flex: 1;
+    min-height: 0;
+    padding: 18px 18px 12px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+  }
+
+  .screen-body::-webkit-scrollbar { width: 4px; }
+  .screen-body::-webkit-scrollbar-thumb { background: var(--green-deep); }
+
+  .right {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    background:
+      linear-gradient(180deg, rgba(8,11,14,0.95), rgba(5,7,8,0.98));
+  }
+
+  .right-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-size: 10px;
+    color: #88b4a0;
+    background: rgba(255,255,255,0.02);
+  }
+
+  .panel-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px 14px 18px;
+  }
+
+  .panel-scroll::-webkit-scrollbar { width: 4px; }
+  .panel-scroll::-webkit-scrollbar-thumb { background: var(--green-deep); }
+
   .input-bar {
-    border-top:1px solid var(--border); padding:10px 14px;
-    display:flex; align-items:center; gap:8px; background:#08100a;
+    border-top: 1px solid var(--line);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 14px;
+    background: linear-gradient(180deg, rgba(6,10,10,0.98), rgba(4,7,7,0.98));
   }
-  .prompt{color:var(--dim);font-size:13px;white-space:nowrap}
+
+  .prompt {
+    color: var(--green-dim);
+    font-size: 13px;
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+
   #cmd-input {
-    flex:1; background:transparent; border:none; outline:none;
-    color:var(--green); font-family:'Share Tech Mono',monospace; font-size:14px; caret-color:var(--green);
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    caret-color: var(--green);
   }
-  #cmd-input::placeholder{color:#1a4020}
+
+  #cmd-input::placeholder { color: rgba(28, 119, 72, 0.58); }
+
   .status-bar {
-    border-top:1px solid var(--border); padding:4px 14px;
-    display:flex; justify-content:space-between;
-    font-size:10px; color:#1e5c25; letter-spacing:1px; background:#08100a;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 5px 14px 6px;
+    background: #06100a;
+    color: #557364;
+    font-size: 10px;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    user-select: none;
   }
-  .money-display{color:var(--yellow)}
-  @keyframes glitch {
-    0%{transform:translate(0);filter:none}
-    10%{transform:translate(-4px,2px);filter:hue-rotate(90deg)}
-    20%{transform:translate(4px,-2px);filter:brightness(2)}
-    30%{transform:translate(-2px,4px);filter:hue-rotate(180deg)}
-    40%{transform:translate(2px,-4px);filter:none}
-    50%{transform:translate(-6px,0);filter:invert(0.3)}
-    60%{transform:translate(6px,2px);filter:hue-rotate(270deg)}
-    70%{transform:translate(0,-2px);filter:brightness(0.3)}
-    80%{transform:translate(-2px,2px);filter:none}
-    90%{transform:translate(2px,0);filter:hue-rotate(45deg)}
-    100%{transform:translate(0);filter:none}
+
+  .money-display { color: var(--yellow); }
+  .warn { color: var(--red); }
+  .dim { color: var(--green-dim); }
+  .white { color: var(--text); }
+  .yellow { color: var(--yellow); }
+  .red { color: var(--red); }
+  .blue { color: var(--blue); }
+
+  .line {
+    line-height: 1.6;
+    margin-bottom: 3px;
+    font-size: 14px;
+    animation: fadein .16s ease;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
-  .glitching{animation:glitch 0.1s infinite}
-  @keyframes fadeout{from{opacity:1}to{opacity:0}}
-  .dying{animation:fadeout 1.5s ease forwards}
-  .item-block {
-    border:1px solid #1a4a1f; padding:10px 14px; margin:8px 0;
-    background:rgba(0,40,10,0.3);
+
+  @keyframes fadein { from { opacity: 0; transform: translateY(1px); } to { opacity: 1; transform: translateY(0); } }
+
+  .line.small { font-size: 12px; }
+  .line.big {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 24px;
+    letter-spacing: 4px;
+    color: var(--green);
   }
-  .item-name{color:var(--yellow);font-size:15px}
-  .item-rarity{font-size:11px;margin-bottom:4px}
-  .item-price{color:#00ff88;font-size:14px}
-  .item-float{color:#888;font-size:11px}
-  .rarity-consumer{color:#aaa}
-  .rarity-industrial{color:#6496e1}
-  .rarity-milspec{color:#4b69cd}
-  .rarity-restricted{color:#8847ff}
-  .rarity-classified{color:#d32ce6}
-  .rarity-covert{color:#eb4b4b}
-  .rarity-gold{color:#e4ae39}
+  .line.sep { color: rgba(72, 140, 98, 0.4); }
+
   .hint-box {
-    border:1px dashed #1a4020; padding:8px 12px; margin:6px 0;
-    font-size:12px; color:#2a7030;
+    margin: 8px 0 10px;
+    border: 1px dashed rgba(61, 148, 91, 0.42);
+    background: rgba(0, 255, 128, 0.03);
+    padding: 9px 11px;
+    color: #6dd19a;
+    font-size: 12px;
+  }
+
+  .offer-card {
+    border: 1px solid rgba(103, 255, 170, 0.17);
+    background:
+      linear-gradient(180deg, rgba(7,15,13,0.92), rgba(4,8,8,0.94)),
+      radial-gradient(circle at 50% 0%, rgba(0,255,140,0.12), transparent 55%);
+    padding: 14px;
+    box-shadow: inset 0 0 24px rgba(0,0,0,.35);
+  }
+
+  .offer-hero {
+    position: relative;
+    height: 210px;
+    border: 1px solid rgba(255,255,255,0.05);
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 50% 40%, rgba(0,255,140,0.10), transparent 28%),
+      radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03), transparent 50%),
+      linear-gradient(180deg, #0b1f15, #091012 55%, #070b0c);
+  }
+
+  .offer-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 50% 50%, transparent 0 34%, rgba(255,255,255,0.03) 34% 35%, transparent 35% 36%, rgba(255,255,255,0.02) 36% 37%, transparent 37% 100%);
+    opacity: .5;
+  }
+
+  .offer-card .ring {
+    position: absolute;
+    inset: 34px 30px auto 30px;
+    height: 140px;
+    border-radius: 50%;
+    border: 1px solid rgba(150,255,196,0.10);
+    box-shadow: 0 0 0 1px rgba(0,0,0,.25), inset 0 0 35px rgba(0,255,120,.05);
+  }
+
+  .offer-card .halo {
+    position: absolute;
+    inset: 60px 60px auto 60px;
+    height: 90px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,255,150,0.12), transparent 70%);
+    filter: blur(4px);
+  }
+
+  .offer-case {
+    position: absolute;
+    left: 50%;
+    top: 55%;
+    transform: translate(-50%, -50%);
+    width: 74%;
+    height: 74px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background:
+      linear-gradient(180deg, rgba(30,36,42,0.95), rgba(8,10,12,0.98));
+    box-shadow: 0 10px 18px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(0,255,160,0.08);
+  }
+
+  .offer-case::before {
+    content: '';
+    position: absolute;
+    inset: 7px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.04);
+    background:
+      radial-gradient(circle at 50% 50%, rgba(0,255,140,0.12), transparent 18%),
+      linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.00));
+  }
+
+  .offer-logo {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 66px;
+    height: 66px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.82);
+    color: rgba(255,255,255,0.90);
+    display: grid;
+    place-items: center;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 11px;
+    box-shadow: 0 0 20px rgba(255,255,255,0.08);
+  }
+
+  .offer-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+    margin-top: 14px;
+    font-size: 12px;
+    color: #91b5a1;
+  }
+
+  .kv {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: 4px;
+  }
+
+  .item-name {
+    margin-top: 10px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 0.6px;
+    color: var(--yellow);
+  }
+
+  .item-rarity {
+    margin-top: 4px;
+    font-size: 11px;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    opacity: .95;
+  }
+
+  .item-float, .item-wear {
+    margin-top: 5px;
+    color: #7a9490;
+    font-size: 11px;
+  }
+
+  .price {
+    margin-top: 8px;
+    font-size: 17px;
+    color: #82ffb5;
+  }
+
+  .right-actions {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 1fr 1fr;
+    margin-top: 12px;
+  }
+
+  button.action {
+    border: 1px solid rgba(255,255,255,0.09);
+    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    color: var(--text);
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: transform .08s ease, border-color .12s ease, background .12s ease;
+  }
+
+  button.action:hover {
+    transform: translateY(-1px);
+    border-color: rgba(77,255,154,0.35);
+    background: linear-gradient(180deg, rgba(77,255,154,0.11), rgba(255,255,255,0.03));
+  }
+
+  button.action.buy {
+    color: #dfffee;
+    border-color: rgba(77,255,154,0.28);
+  }
+
+  button.action.pass {
+    color: #ffefd1;
+    border-color: rgba(255,213,106,0.18);
+  }
+
+  .chat-log {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .bubble {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    max-width: 100%;
+  }
+
+  .avatar {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 22px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+    display: grid;
+    place-items: center;
+    color: #86b99a;
+    font-size: 11px;
+  }
+
+  .bubble .text {
+    flex: 1;
+    min-width: 0;
+    padding: 7px 9px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    color: #cde9d5;
+    line-height: 1.45;
+    font-size: 13px;
+  }
+
+  .bubble.system .text { color: #89cba1; }
+  .bubble.vendor .text { color: #e5f5ea; }
+  .bubble.warn .text { color: var(--red); }
+
+  .flash {
+    animation: flash .16s infinite alternate;
+  }
+
+  @keyframes flash {
+    from { filter: none; transform: translateX(0); }
+    to { filter: hue-rotate(6deg) brightness(1.6); transform: translateX(1px); }
+  }
+
+  .glitching {
+    animation: glitch .12s infinite;
+  }
+
+  @keyframes glitch {
+    0% { transform: translate(0); filter: none; }
+    20% { transform: translate(-4px, 2px); filter: hue-rotate(90deg); }
+    40% { transform: translate(3px, -2px); filter: brightness(1.8); }
+    60% { transform: translate(-2px, -3px); filter: invert(.08); }
+    80% { transform: translate(2px, 1px); filter: hue-rotate(180deg); }
+    100% { transform: translate(0); filter: none; }
+  }
+
+  .dying {
+    animation: fadeout 1.5s ease forwards;
+  }
+
+  @keyframes fadeout {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  .login-wrap {
+    height: 100%;
+    display: grid;
+    place-items: center;
+    padding: 22px;
+  }
+
+  .login-card {
+    width: min(520px, 100%);
+    border: 1px solid rgba(77,255,154,0.16);
+    background:
+      linear-gradient(180deg, rgba(10,16,16,0.95), rgba(5,8,10,0.96)),
+      radial-gradient(circle at 50% 0%, rgba(0,255,140,0.09), transparent 45%);
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.35);
+    padding: 24px 24px 18px;
+  }
+
+  .login-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: 6px;
+    text-align: center;
+    color: var(--green);
+    margin-bottom: 8px;
+  }
+
+  .login-sub {
+    text-align: center;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 11px;
+    margin-bottom: 18px;
+  }
+
+  .login-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 14px;
+    color: #a8c7b7;
+    font-size: 12px;
+    margin-bottom: 18px;
+  }
+
+  .login-grid .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding-bottom: 4px;
+  }
+
+  .login-input {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 14px;
+  }
+
+  .login-input .label {
+    color: var(--green-dim);
+    font-size: 13px;
+    flex: 0 0 auto;
+  }
+
+  #login-input {
+    flex: 1;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.10);
+    outline: none;
+    padding: 10px 12px;
+    color: var(--green);
+    font-family: inherit;
+    font-size: 14px;
+    caret-color: var(--green);
+  }
+
+  #login-input::placeholder { color: rgba(28, 119, 72, 0.58); }
+
+  .login-foot {
+    margin-top: 12px;
+    color: #748a83;
+    font-size: 11px;
+    text-align: center;
+    line-height: 1.45;
+  }
+
+  .rarity-consumer { color: #aaa; }
+  .rarity-industrial { color: #6ea8ff; }
+  .rarity-milspec { color: #4b69cd; }
+  .rarity-restricted { color: #8d54ff; }
+  .rarity-classified { color: #d32ce6; }
+  .rarity-covert { color: #ff5d5d; }
+  .rarity-gold { color: #e4ae39; }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 920px) {
+    .shell { width: 100vw; height: 100vh; top: 0; border: none; }
+    .workspace { grid-template-columns: 1fr; }
+    .screen { border-right: none; border-bottom: 1px solid var(--line); }
   }
 </style>
 </head>
 <body>
-<div class="terminal" id="terminal">
-  <div class="title-bar">
-    <div class="dot"></div>
-    <span>CS2 TRADE NETWORK // ENCRYPTED CHANNEL</span>
-    <span class="title-bar-right" id="session-display">SESSION: ----</span>
+  <div class="shell" id="terminal">
+    <div class="topbar">
+      <div class="dot"></div>
+      <div class="topbar-title">CS2 TRADE NETWORK // ENCRYPTED CHANNEL</div>
+      <div class="topbar-right">
+        <span id="session-display">SESSION: ----</span>
+        <span class="badge" id="phase-badge">LOCKED</span>
+      </div>
+    </div>
+
+    <div id="login-view" class="login-wrap">
+      <div class="login-card">
+        <div class="login-title">GENESIS NODE</div>
+        <div class="login-sub">sealed uplink terminal</div>
+        <div class="login-grid">
+          <div class="row"><span>CHANNEL</span><span>ARMS DEALER</span></div>
+          <div class="row"><span>SECURE LINK</span><span>ACTIVE</span></div>
+          <div class="row"><span>SESSION ID</span><span id="login-session">----</span></div>
+          <div class="row"><span>ACCESS TYPE</span><span>4-DIGIT PASS</span></div>
+        </div>
+        <div class="login-input">
+          <div class="label" id="login-label">PASS &gt;</div>
+          <input type="password" id="login-input" placeholder="enter access code..." autocomplete="off" autofocus />
+        </div>
+        <div class="login-foot">
+          The password is derived from the visible session ID.<br />
+          Keep this page and the other CS2 tools on the same origin so shared storage stays in sync.
+        </div>
+      </div>
+    </div>
+
+    <div id="app-view" class="workspace hidden">
+      <div class="screen">
+        <div class="screen-header">
+          <span>Dealer Chat</span>
+          <span id="attempts-display">ATTEMPTS LEFT: 10</span>
+        </div>
+        <div class="screen-body" id="screen"></div>
+      </div>
+
+      <div class="right">
+        <div class="right-header">
+          <span>Current Offer</span>
+          <span id="status-note">awaiting authentication</span>
+        </div>
+        <div class="panel-scroll" id="offer-panel">
+          <div class="offer-card">
+            <div class="offer-hero">
+              <div class="ring"></div>
+              <div class="halo"></div>
+              <div class="offer-case"></div>
+              <div class="offer-logo">CS2</div>
+            </div>
+            <div class="item-name" id="offer-name">No offer yet</div>
+            <div class="item-rarity" id="offer-rarity">LOCKED</div>
+            <div class="item-wear" id="offer-wear">Authenticate to begin negotiation.</div>
+            <div class="item-float" id="offer-float">Float: --</div>
+            <div class="price" id="offer-price">$0.00</div>
+            <div class="offer-meta">
+              <div class="kv"><span>Vendor</span><span id="offer-vendor">----</span></div>
+              <div class="kv"><span>Limit</span><span id="offer-limit">10 rejects</span></div>
+              <div class="kv"><span>Wallet</span><span id="offer-wallet">$0.00</span></div>
+              <div class="kv"><span>Risk</span><span id="offer-risk">High</span></div>
+            </div>
+            <div class="right-actions">
+              <button class="action buy" id="buy-btn" disabled>BUY</button>
+              <button class="action pass" id="pass-btn" disabled>DECLINE</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-bar hidden" id="command-bar">
+      <span class="prompt" id="prompt-label">PASS &gt;</span>
+      <input type="password" id="cmd-input" placeholder="enter access code..." autocomplete="off" />
+    </div>
+
+    <div class="status-bar">
+      <span>CONN: SECURE • ENC: AES-256 • ANON: ACTIVE</span>
+      <span>BALANCE: $<span class="money-display" id="money-display">0.00</span></span>
+      <span id="status-right">SESSION ROUTED</span>
+    </div>
   </div>
-  <div class="screen" id="screen"></div>
-  <div class="input-bar" id="input-bar">
-    <span class="prompt" id="prompt-label">PASS &gt;</span>
-    <input type="password" id="cmd-input" placeholder="enter access code..." autocomplete="off" autofocus />
-  </div>
-  <div class="status-bar">
-    <span>CONN: SECURE • ENC: AES-256 • ANON: ACTIVE</span>
-    <span>BALANCE: $<span class="money-display" id="money-display">0.00</span></span>
-  </div>
-</div>
+
 <script>
-// ═══════════════════════════════════════════════
-// SHARED STORAGE KEY
-// ═══════════════════════════════════════════════
+(() => {
+  const SHARED_KEY = 'cs2_shared';
+  const REJECT_LIMIT = 10;
 
-const SHARED_KEY = 'cs2_shared';
+  const BASE_ITEMS = [
+    { name: 'AK-47 | Redline', rarity: 'classified', wear: 'Field-Tested', price: 24.50, float: '0.2341' },
+    { name: 'AWP | Asiimov', rarity: 'covert', wear: 'Battle-Scarred', price: 67.00, float: '0.7812' },
+    { name: 'M4A4 | Howl', rarity: 'gold', wear: 'Minimal Wear', price: 1840.00, float: '0.1102' },
+    { name: 'Karambit | Fade', rarity: 'gold', wear: 'Factory New', price: 2100.00, float: '0.0322' },
+    { name: 'Desert Eagle | Blaze', rarity: 'classified', wear: 'Factory New', price: 412.00, float: '0.0071' },
+    { name: 'Glock-18 | Fade', rarity: 'classified', wear: 'Factory New', price: 380.00, float: '0.0214' },
+    { name: 'USP-S | Kill Confirmed', rarity: 'covert', wear: 'Minimal Wear', price: 88.00, float: '0.0981' },
+    { name: 'M4A1-S | Knight', rarity: 'covert', wear: 'Field-Tested', price: 156.00, float: '0.3211' },
+    { name: 'AK-47 | Fire Serpent', rarity: 'covert', wear: 'Well-Worn', price: 310.00, float: '0.4422' },
+    { name: 'Butterfly Knife | Tiger Tooth', rarity: 'gold', wear: 'Factory New', price: 1250.00, float: '0.0099' },
+    { name: 'FAMAS | Valence', rarity: 'milspec', wear: 'Minimal Wear', price: 3.20, float: '0.1301' },
+    { name: 'Five-SeveN | Monkey Business', rarity: 'milspec', wear: 'Factory New', price: 6.80, float: '0.0512' },
+    { name: 'MAC-10 | Neon Rider', rarity: 'restricted', wear: 'Minimal Wear', price: 14.00, float: '0.1122' },
+    { name: 'Stiletto Knife | Doppler', rarity: 'gold', wear: 'Factory New', price: 450.00, float: '0.0233' },
+    { name: 'P250 | See Ya Later', rarity: 'restricted', wear: 'Field-Tested', price: 9.50, float: '0.2801' },
+    { name: 'AUG | Chameleon', rarity: 'milspec', wear: 'Factory New', price: 5.60, float: '0.0712' },
+    { name: 'SG 553 | Cyrex', rarity: 'restricted', wear: 'Minimal Wear', price: 11.20, float: '0.0933' },
+    { name: 'M4A4 | Neo-Noir', rarity: 'covert', wear: 'Field-Tested', price: 42.00, float: '0.2801' },
+  ];
 
-function derivePassword(sid) {
-  return String((sid * 31 + 7) % 9999).padStart(4,'0');
-}
+  const VENDOR_NAMES = [
+    'Aleksandr_V', 'ShadowBroker99', 'TradeKingRU', 'dark_merchant', 'xXSkinVaultXx',
+    'booth_proxy', 'node_7', 'dealer_03'
+  ];
+  const GREETINGS = [
+    'yo. heard you were looking. i got something.',
+    'bro you actually came. okay. listen up.',
+    'dont tell anyone about this channel. just between us.',
+    'finally. been waiting. got fresh stock in.',
+    'new stuff just landed. you got timing.'
+  ];
+  const PITCH_INTROS = [
+    'check this out:', 'got this right now:', 'fresh drop:', 'one-time offer:', 'just pulled this:', 'straight from a case:'
+  ];
+  const REJECT_RESPONSES = [
+    'fine. your loss.', 'okay okay. but hear me out on the next one.',
+    'bro really? that price is steal.', 'whatever man. i got more.',
+    'lol okay. next one is better anyway.', 'you serious? alright.',
+    'not for everyone i guess.', 'fair. but youre missing out.',
+    'thats actually insane value but okay', 'ok i see you. selective buyer. i respect.'
+  ];
+  const BUY_RESPONSES = [
+    'TRANSACTION CONFIRMED. sending now.',
+    'deal. encrypting transfer.',
+    'smart move. item is yours.',
+    'good call. ill process it.'
+  ];
+  const CRASH_LINES = [
+    'ERR_MEMORY_FAULT_0x8F3A', 'STACK OVERFLOW AT 0xDEADBEEF', 'NULL PTR EXCEPTION',
+    'DISK WIPE: 23%', 'DISK WIPE: 61%', 'DISK WIPE: 99%', '>> KEYS ROTATED <<', 'BYE.'
+  ];
 
-function newSessionId() {
-  return Math.floor(1000 + Math.random() * 8999);
-}
+  const el = {
+    terminal: document.getElementById('terminal'),
+    loginView: document.getElementById('login-view'),
+    appView: document.getElementById('app-view'),
+    commandBar: document.getElementById('command-bar'),
+    loginInput: document.getElementById('login-input'),
+    cmdInput: document.getElementById('cmd-input'),
+    loginSession: document.getElementById('login-session'),
+    sessionDisplay: document.getElementById('session-display'),
+    promptLabel: document.getElementById('prompt-label'),
+    phaseBadge: document.getElementById('phase-badge'),
+    statusNote: document.getElementById('status-note'),
+    moneyDisplay: document.getElementById('money-display'),
+    statusRight: document.getElementById('status-right'),
+    attemptsDisplay: document.getElementById('attempts-display'),
+    offerName: document.getElementById('offer-name'),
+    offerRarity: document.getElementById('offer-rarity'),
+    offerWear: document.getElementById('offer-wear'),
+    offerFloat: document.getElementById('offer-float'),
+    offerPrice: document.getElementById('offer-price'),
+    offerVendor: document.getElementById('offer-vendor'),
+    offerLimit: document.getElementById('offer-limit'),
+    offerWallet: document.getElementById('offer-wallet'),
+    offerRisk: document.getElementById('offer-risk'),
+    buyBtn: document.getElementById('buy-btn'),
+    passBtn: document.getElementById('pass-btn'),
+    screen: document.getElementById('screen'),
+    offerPanel: document.getElementById('offer-panel'),
+  };
 
-function loadShared() {
-  try { return JSON.parse(localStorage.getItem(SHARED_KEY)) || null; }
-  catch { return null; }
-}
+  const STATE = {
+    phase: 'boot',
+    sessionId: null,
+    correctPassword: null,
+    currentItem: null,
+    vendor: null,
+    rejects: 0,
+    dead: false,
+    busy: false,
+    introShown: false,
+  };
 
-function saveShared(obj) {
-  localStorage.setItem(SHARED_KEY, JSON.stringify(obj));
-}
-
-function getShared() {
-  const s = loadShared();
-  if (!s) {
-    const fresh = { sessionId:newSessionId(), dead:false, money:0, inventory:[], prices:{} };
-    saveShared(fresh);
-    return fresh;
-  }
-  return s;
-}
-
-// ── MONEY ──
-function getMoney() {
-  return getShared().money || 0;
-}
-
-function setMoney(v) {
-  const s = getShared();
-  s.money = Math.max(0, Math.round(v * 100) / 100);
-  saveShared(s);
-}
-
-// ── INVENTORY ──
-function addToInventory(item) {
-  const s = getShared();
-  if (!s.inventory) s.inventory = [];
-
-  s.inventory.push({
-    ...item,
-    boughtAt: item.price,
-    acquiredTime: Date.now(),
-    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`
-  });
-
-  saveShared(s);
-}
-
-// ── ITEMS ──
-const BASE_ITEMS = [
-  { name:"AK-47 | Redline", rarity:"classified", wear:"Field-Tested", price:24.50, float:"0.2341" },
-  { name:"AWP | Asiimov", rarity:"covert", wear:"Battle-Scarred", price:67.00, float:"0.7812" },
-  { name:"M4A4 | Howl", rarity:"gold", wear:"Minimal Wear", price:1840.00, float:"0.1102" },
-  { name:"Karambit | Fade", rarity:"gold", wear:"Factory New", price:2100.00, float:"0.0322" },
-];
-
-function getCurrentPrice(name, base) {
-  const s = getShared();
-  return (s.prices && typeof s.prices[name] === 'number') ? s.prices[name] : base;
-}
-
-function pickItem() {
-  const base = BASE_ITEMS[Math.floor(Math.random() * BASE_ITEMS.length)];
-  return { ...base, price:getCurrentPrice(base.name, base.price) };
-}
-
-// ── STATE ──
-let STATE = {
-  phase:'login',
-  rejects:0,
-  currentItem:null,
-  sessionId:null,
-  correctPassword:null
-};
-
-function bootState() {
-  const s = getShared();
-  STATE.sessionId = s.sessionId;
-  STATE.correctPassword = derivePassword(s.sessionId);
-  STATE.phase = s.dead ? 'dead_login' : 'login';
-}
-
-function markDead() {
-  const s = getShared();
-  s.sessionId = newSessionId();
-  s.dead = true;
-  saveShared(s);
-
-  STATE.sessionId = s.sessionId;
-  STATE.correctPassword = derivePassword(s.sessionId);
-}
-
-function markAlive() {
-  const s = getShared();
-  s.dead = false;
-  saveShared(s);
-}
-
-// ── DOM ──
-const screen = document.getElementById('screen');
-const input = document.getElementById('cmd-input');
-const promptLabel = document.getElementById('prompt-label');
-const moneyDisplay = document.getElementById('money-display');
-const sessionDisplay = document.getElementById('session-display');
-const terminal = document.getElementById('terminal');
-
-// ── DISPLAY ──
-function updateMoneyDisplay() {
-  moneyDisplay.textContent = getMoney().toFixed(2);
-}
-
-// ── SAFE PRINT ──
-function print(text, cls='', delay=0) {
-  return new Promise(res => {
-    setTimeout(() => {
-      const d = document.createElement('div');
-      d.className = 'line' + (cls ? ' '+cls : '');
-      d.textContent = text;
-      screen.appendChild(d);
-      screen.scrollTop = screen.scrollHeight;
-      res();
-    }, delay);
-  });
-}
-
-// ── CORE LOGIC FIXES ──
-
-// ❗ FIX: BUY now actually costs money
-async function handleBuy() {
-  if (!STATE.currentItem) return;
-
-  const price = STATE.currentItem.price;
-  const money = getMoney();
-
-  if (money < price) {
-    await print('  [SYS] Insufficient funds.', 'red');
-    return;
+  function safeParse(raw) {
+    try { return JSON.parse(raw); } catch { return null; }
   }
 
-  setMoney(money - price);
-  addToInventory(STATE.currentItem);
+  function loadShared() {
+    const data = safeParse(localStorage.getItem(SHARED_KEY));
+    if (data && typeof data === 'object') return data;
+    return null;
+  }
 
-  await print(`[SYS] Purchased ${STATE.currentItem.name}`, 'yellow');
-  await print(`  -$${price.toFixed(2)} deducted`, 'dim');
+  function saveShared(data) {
+    localStorage.setItem(SHARED_KEY, JSON.stringify(data));
+  }
 
-  await triggerCrash('TRANSACTION ANOMALY — HONEYPOT DETECTED');
-}
+  function ensureShared() {
+    let data = loadShared();
+    if (!data) {
+      data = {
+        sessionId: newSessionId(),
+        dead: false,
+        money: 0,
+        inventory: [],
+        prices: {},
+        priceLog: [],
+      };
+      saveShared(data);
+    } else {
+      if (!Array.isArray(data.inventory)) data.inventory = [];
+      if (!data.prices || typeof data.prices !== 'object') data.prices = {};
+      if (!Array.isArray(data.priceLog)) data.priceLog = [];
+      if (typeof data.money !== 'number') data.money = 0;
+      if (typeof data.dead !== 'boolean') data.dead = false;
+      if (!data.sessionId) data.sessionId = newSessionId();
+      saveShared(data);
+    }
+    return data;
+  }
 
-// ❗ FIX: reject safely handles null item + floating precision
-async function handleReject() {
-  if (!STATE.currentItem) return;
+  function derivePassword(sessionId) {
+    return String((sessionId * 31 + 7) % 9999).padStart(4, '0');
+  }
 
-  const bonus = Math.round(STATE.currentItem.price * 0.2 * 100) / 100;
-  setMoney(getMoney() + bonus);
+  function newSessionId() {
+    return Math.floor(1000 + Math.random() * 8999);
+  }
 
-  STATE.rejects++;
+  function getMoney() {
+    const data = loadShared();
+    return data ? (Number(data.money) || 0) : 0;
+  }
 
-  await print(`[VENDOR]: rejected...`, 'dim');
-  await print(`  +$${bonus.toFixed(2)}`, 'dim');
+  function setMoney(value) {
+    const data = ensureShared();
+    data.money = Math.max(0, Math.round(Number(value) * 100) / 100);
+    saveShared(data);
+    syncHeader();
+  }
 
-  if (STATE.rejects >= 10) {
-    await triggerCrash('EXCESSIVE REJECTIONS DETECTED');
-  } else {
+  function addToInventory(item) {
+    const data = ensureShared();
+    data.inventory.push({
+      ...item,
+      boughtAt: item.price,
+      acquiredTime: Date.now(),
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    });
+    saveShared(data);
+  }
+
+  function getCurrentPrice(name, basePrice) {
+    const data = loadShared();
+    if (data && data.prices && typeof data.prices[name] === 'number') {
+      return data.prices[name];
+    }
+    return basePrice;
+  }
+
+  function pickItem() {
+    const base = BASE_ITEMS[Math.floor(Math.random() * BASE_ITEMS.length)];
+    return {
+      ...base,
+      price: getCurrentPrice(base.name, base.price),
+    };
+  }
+
+  function formatMoney(n) {
+    return `$${Number(n || 0).toFixed(2)}`;
+  }
+
+  function rarityLabel(rarity) {
+    return `rarity-${rarity}`;
+  }
+
+  function vendorName() {
+    return STATE.vendor || 'dealer';
+  }
+
+  function updateOfferPanel(item = STATE.currentItem) {
+    const currentMoney = getMoney();
+    el.offerWallet.textContent = formatMoney(currentMoney);
+    el.offerLimit.textContent = `${Math.max(0, REJECT_LIMIT - STATE.rejects)} rejects`;
+    el.attemptsDisplay.textContent = `ATTEMPTS LEFT: ${Math.max(0, REJECT_LIMIT - STATE.rejects)}`;
+    el.offerVendor.textContent = vendorName();
+    el.statusNote.textContent = STATE.phase === 'chat' ? 'live negotiation' : (STATE.dead ? 'session rotated' : 'awaiting authentication');
+
+    if (!item) {
+      el.offerName.textContent = 'No offer yet';
+      el.offerRarity.textContent = 'LOCKED';
+      el.offerWear.textContent = 'Authenticate to begin negotiation.';
+      el.offerFloat.textContent = 'Float: --';
+      el.offerPrice.textContent = '$0.00';
+      el.offerRisk.textContent = 'High';
+      return;
+    }
+
+    el.offerName.textContent = item.name;
+    el.offerRarity.textContent = item.rarity.toUpperCase();
+    el.offerRarity.className = `item-rarity ${rarityLabel(item.rarity)}`;
+    el.offerWear.textContent = item.wear;
+    el.offerFloat.textContent = `Float: ${item.float}`;
+    el.offerPrice.textContent = formatMoney(item.price);
+    el.offerRisk.textContent = item.rarity === 'gold' ? 'Extreme' : item.rarity === 'covert' ? 'Very High' : 'High';
+  }
+
+  function syncHeader() {
+    const data = ensureShared();
+    STATE.sessionId = data.sessionId;
+    STATE.correctPassword = derivePassword(data.sessionId);
+    el.sessionDisplay.textContent = `SESSION: ${STATE.sessionId}`;
+    el.loginSession.textContent = STATE.sessionId;
+    el.moneyDisplay.textContent = getMoney().toFixed(2);
+    el.offerWallet.textContent = formatMoney(getMoney());
+    el.phaseBadge.textContent = STATE.dead ? 'ROTATED' : (STATE.phase === 'chat' ? 'LIVE' : 'LOCKED');
+    el.phaseBadge.className = `badge ${STATE.dead ? 'warn' : ''}`.trim();
+  }
+
+  function printLine(text, cls = '', container = el.screen) {
+    const line = document.createElement('div');
+    line.className = `line${cls ? ' ' + cls : ''}`;
+    line.textContent = text;
+    container.appendChild(line);
+    container.scrollTop = container.scrollHeight;
+    return line;
+  }
+
+  function printSep() {
+    printLine('──────────────────────────────────────────────────────────', 'sep');
+  }
+
+  function bubble(text, type = 'system') {
+    const wrap = document.createElement('div');
+    wrap.className = `bubble ${type}`;
+    const av = document.createElement('div');
+    av.className = 'avatar';
+    av.textContent = type === 'vendor' ? 'D' : type === 'warn' ? '!' : 'S';
+    const tx = document.createElement('div');
+    tx.className = 'text';
+    tx.textContent = text;
+    wrap.appendChild(av);
+    wrap.appendChild(tx);
+    el.screen.appendChild(wrap);
+    el.screen.scrollTop = el.screen.scrollHeight;
+  }
+
+  function printHint(text) {
+    const box = document.createElement('div');
+    box.className = 'hint-box';
+    box.textContent = text;
+    el.screen.appendChild(box);
+    el.screen.scrollTop = el.screen.scrollHeight;
+  }
+
+  function printItem(item) {
+    const block = document.createElement('div');
+    block.className = 'offer-card';
+    block.style.marginTop = '10px';
+    block.innerHTML = `
+      <div class="offer-hero" style="height:170px;margin-bottom:12px;">
+        <div class="ring"></div>
+        <div class="halo"></div>
+        <div class="offer-case"></div>
+        <div class="offer-logo">CS2</div>
+      </div>
+      <div class="item-name">${item.name}</div>
+      <div class="item-rarity ${rarityLabel(item.rarity)}">[${item.rarity.toUpperCase()}] ${item.wear}</div>
+      <div class="item-float">Float: ${item.float}</div>
+      <div class="price">${formatMoney(item.price)}</div>
+    `;
+    el.screen.appendChild(block);
+    el.screen.scrollTop = el.screen.scrollHeight;
+  }
+
+  function setPhase(phase) {
+    STATE.phase = phase;
+    el.phaseBadge.textContent = STATE.dead ? 'ROTATED' : (phase === 'chat' ? 'LIVE' : 'LOCKED');
+    el.phaseBadge.className = `badge ${STATE.dead ? 'warn' : ''}`.trim();
+    el.buyBtn.disabled = phase !== 'chat' || !STATE.currentItem || STATE.busy;
+    el.passBtn.disabled = phase !== 'chat' || !STATE.currentItem || STATE.busy;
+  }
+
+  function showLoginScreen(isDead = false) {
+    STATE.busy = false;
+    setPhase(isDead ? 'dead_login' : 'login');
+    el.loginView.classList.remove('hidden');
+    el.appView.classList.add('hidden');
+    el.commandBar.classList.add('hidden');
+    el.loginInput.type = 'password';
+    el.loginInput.value = '';
+    el.loginInput.placeholder = 'enter access code...';
+    el.promptLabel.textContent = 'PASS >';
+    el.cmdInput.type = 'password';
+    el.cmdInput.value = '';
+    el.cmdInput.placeholder = 'enter access code...';
+    el.cmdInput.disabled = false;
+    el.loginLabelText = isDead ? 'PASS >' : 'PASS >';
+    el.loginSession.textContent = STATE.sessionId;
+    syncHeader();
+    updateOfferPanel(null);
+    el.screen.innerHTML = '';
+  }
+
+  function bootCardText(isDead = false) {
+    const data = ensureShared();
+    const root = el.loginView.querySelector('.login-card');
+    if (!root) return;
+
+    const existing = root.querySelector('.login-extra');
+    if (existing) existing.remove();
+
+    const extra = document.createElement('div');
+    extra.className = 'login-extra';
+    extra.style.marginTop = '10px';
+    extra.style.color = isDead ? 'var(--red)' : 'var(--yellow)';
+    extra.style.textAlign = 'center';
+    extra.style.fontSize = '12px';
+    extra.style.lineHeight = '1.45';
+    extra.innerHTML = isDead
+      ? `Previous session terminated. New session ID generated: <span style="color:var(--yellow)">${data.sessionId}</span>`
+      : `Visible session ID: <span style="color:var(--yellow)">${data.sessionId}</span> &nbsp;|&nbsp; Password formula is stable across sessions.`;
+    root.appendChild(extra);
+  }
+
+  function showApp() {
+    el.loginView.classList.add('hidden');
+    el.appView.classList.remove('hidden');
+  }
+
+  async function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function greetVendor() {
+    STATE.vendor = VENDOR_NAMES[Math.floor(Math.random() * VENDOR_NAMES.length)];
+    bubble(`[${STATE.vendor}]: ${GREETINGS[Math.floor(Math.random() * GREETINGS.length)]}`, 'vendor');
+    printHint('commands: "buy" to purchase • "pass" to decline (+20% of item price)');
+  }
+
+  async function offerItem() {
+    if (STATE.phase !== 'chat') return;
+    STATE.currentItem = pickItem();
+    syncHeader();
+    updateOfferPanel(STATE.currentItem);
+    bubble(`[${STATE.vendor}]: ${PITCH_INTROS[Math.floor(Math.random() * PITCH_INTROS.length)]}`, 'vendor');
+    await sleep(180);
+    printItem(STATE.currentItem);
+    await sleep(120);
+    bubble(`[${STATE.vendor}]: price is live. your call.`, 'vendor');
+    updateOfferButtons();
+  }
+
+  function updateOfferButtons() {
+    const enabled = STATE.phase === 'chat' && !STATE.busy && !!STATE.currentItem;
+    el.buyBtn.disabled = !enabled;
+    el.passBtn.disabled = !enabled;
+  }
+
+  function pickRejectResponse() {
+    const idx = Math.min(STATE.rejects, REJECT_RESPONSES.length - 1);
+    return REJECT_RESPONSES[idx];
+  }
+
+  async function handleReject() {
+    if (STATE.phase !== 'chat' || STATE.busy || !STATE.currentItem) return;
+    STATE.busy = true;
+    updateOfferButtons();
+    const bonus = Math.round(STATE.currentItem.price * 0.2 * 100) / 100;
+    const newMoney = getMoney() + bonus;
+    setMoney(newMoney);
+    STATE.rejects += 1;
+    syncHeader();
+    updateOfferPanel(STATE.currentItem);
+    bubble(`[${STATE.vendor}]: ${pickRejectResponse()}`, 'system');
+    bubble(`[SYS]: +${formatMoney(bonus)} credited • balance ${formatMoney(newMoney)}`, 'system');
+    await sleep(160);
+
+    if (STATE.rejects >= REJECT_LIMIT) {
+      await triggerCrash('EXCESSIVE REJECTIONS DETECTED');
+      return;
+    }
+
+    STATE.busy = false;
+    updateOfferButtons();
+    await sleep(220);
     await offerItem();
   }
-}
 
-// ❗ FIX: state-safe item handling
-async function offerItem() {
-  if (STATE.phase !== 'chat') return;
+  async function handleBuy() {
+    if (STATE.phase !== 'chat' || STATE.busy || !STATE.currentItem) return;
+    STATE.busy = true;
+    updateOfferButtons();
 
-  STATE.currentItem = pickItem();
-
-  await print(`[VENDOR]: new offer incoming...`, 'white');
-  await print(`  ${STATE.currentItem.name} - $${STATE.currentItem.price.toFixed(2)}`, 'yellow');
-}
-
-// ❗ FIX: state consistency
-async function triggerCrash(reason) {
-  STATE.phase = 'dead';
-  input.disabled = true;
-
-  await print(`[!] ${reason}`, 'red');
-
-  const s = getShared();
-  s.dead = true;
-  saveShared(s);
-
-  await showDeadLogin();
-}
-
-// ── INPUT HANDLER ──
-input.addEventListener('keydown', async (e) => {
-  if (e.key !== 'Enter') return;
-
-  const val = input.value.trim();
-  input.value = '';
-
-  if (STATE.phase === 'login' || STATE.phase === 'dead_login') {
-    if (val === STATE.correctPassword) {
-      STATE.phase = 'chat';
-      markAlive();
-      await print('[ACCESS GRANTED]', 'green');
-      await offerItem();
-    } else {
-      await print('ACCESS DENIED', 'red');
+    const item = STATE.currentItem;
+    const currentMoney = getMoney();
+    if (currentMoney < item.price) {
+      bubble('[SYS]: insufficient funds.', 'warn');
+      STATE.busy = false;
+      updateOfferButtons();
+      return;
     }
-    return;
+
+    setMoney(currentMoney - item.price);
+    addToInventory(item);
+    syncHeader();
+    updateOfferPanel(item);
+
+    bubble(`[${STATE.vendor}]: ${BUY_RESPONSES[Math.floor(Math.random() * BUY_RESPONSES.length)]}`, 'vendor');
+    bubble(`[SYS]: -${formatMoney(item.price)} deducted • inventory updated`, 'system');
+    bubble(`[SYS]: ${item.name} secured to vault.`, 'system');
+    await sleep(220);
+    await triggerCrash('TRANSACTION ANOMALY — HONEYPOT DETECTED');
   }
 
-  if (STATE.phase === 'chat') {
-    if (val === 'buy') await handleBuy();
-    else if (val === 'pass') await handleReject();
-  }
-});
+  async function triggerCrash(reason) {
+    STATE.phase = 'dead';
+    STATE.busy = true;
+    updateOfferButtons();
+    el.cmdInput.disabled = true;
+    el.buyBtn.disabled = true;
+    el.passBtn.disabled = true;
 
-// ── INIT ──
-bootState();
-updateMoneyDisplay();
+    const terminal = el.terminal;
+    terminal.classList.add('flash');
+    bubble(`[!] ${reason}`, 'warn');
+    await sleep(160);
+    bubble('[!] initiating secure wipe protocol', 'warn');
+    await sleep(160);
+    bubble('[!] channel compromised', 'warn');
+    await sleep(140);
+    terminal.classList.add('glitching');
+    for (const line of CRASH_LINES) {
+      bubble(line, 'warn');
+      await sleep(90);
+    }
+    await sleep(220);
+    terminal.classList.remove('glitching');
+    terminal.classList.add('dying');
+
+    const data = ensureShared();
+    data.dead = true;
+    data.sessionId = newSessionId();
+    saveShared(data);
+    STATE.sessionId = data.sessionId;
+    STATE.correctPassword = derivePassword(STATE.sessionId);
+    STATE.currentItem = null;
+    STATE.rejects = 0;
+    STATE.dead = true;
+
+    await sleep(1500);
+    terminal.classList.remove('flash');
+    terminal.classList.remove('dying');
+    el.cmdInput.disabled = false;
+    bootCardText(true);
+    showLoginScreen(true);
+    syncHeader();
+    updateOfferPanel(null);
+    STATE.busy = false;
+  }
+
+  async function startChat() {
+    const data = ensureShared();
+    data.dead = false;
+    saveShared(data);
+    STATE.dead = false;
+    STATE.rejects = 0;
+    STATE.currentItem = null;
+    STATE.busy = false;
+    STATE.vendor = VENDOR_NAMES[Math.floor(Math.random() * VENDOR_NAMES.length)];
+
+    showApp();
+    el.commandBar.classList.remove('hidden');
+    el.screen.innerHTML = '';
+    el.cmdInput.type = 'text';
+    el.cmdInput.placeholder = 'buy / pass';
+    el.promptLabel.textContent = '> ';
+    el.loginInput.value = '';
+
+    syncHeader();
+    updateOfferPanel(null);
+    setPhase('chat');
+    bubble('[SYSTEM]: authentication successful', 'system');
+    bubble('[SYSTEM]: secure channel established', 'system');
+    printSep();
+    await sleep(240);
+    greetVendor();
+    await sleep(260);
+    await offerItem();
+    updateOfferButtons();
+    el.cmdInput.focus();
+  }
+
+  function loginAttempt() {
+    const typed = el.loginInput.value.trim();
+    el.loginInput.value = '';
+    if (!typed) return;
+    if (typed === STATE.correctPassword) {
+      startChat();
+    } else {
+      const target = STATE.phase === 'dead_login' ? 'DEAD ACCESS' : 'ACCESS';
+      printLine(`${target} DENIED. incorrect code.`, 'red');
+      printLine('', '');
+    }
+  }
+
+  function commandAttempt() {
+    const raw = el.cmdInput.value.trim();
+    el.cmdInput.value = '';
+    if (!raw) return;
+
+    if (STATE.phase === 'login' || STATE.phase === 'dead_login') {
+      if (raw === STATE.correctPassword) startChat();
+      else printLine('ACCESS DENIED.', 'red');
+      return;
+    }
+
+    const cmd = raw.toLowerCase();
+    if (cmd === 'buy' || cmd === 'accept') {
+      handleBuy();
+    } else if (cmd === 'pass' || cmd === 'reject' || cmd === 'no' || cmd === 'skip' || cmd === 'decline') {
+      handleReject();
+    } else {
+      printLine('[SYS] unknown command. use "buy" or "pass".', 'dim');
+    }
+  }
+
+  function initLoginScreen() {
+    const data = ensureShared();
+    STATE.sessionId = data.sessionId;
+    STATE.correctPassword = derivePassword(STATE.sessionId);
+    STATE.dead = !!data.dead;
+    STATE.phase = STATE.dead ? 'dead_login' : 'login';
+    syncHeader();
+    bootCardText(STATE.dead);
+    showLoginScreen(STATE.dead);
+    el.loginInput.focus();
+  }
+
+  function refreshFromStorage() {
+    const data = ensureShared();
+    if (data.sessionId !== STATE.sessionId) {
+      STATE.sessionId = data.sessionId;
+      STATE.correctPassword = derivePassword(STATE.sessionId);
+      syncHeader();
+      if (STATE.phase !== 'chat') {
+        bootCardText(!!data.dead);
+        showLoginScreen(!!data.dead);
+      }
+    }
+    STATE.dead = !!data.dead;
+    el.moneyDisplay.textContent = getMoney().toFixed(2);
+    updateOfferPanel(STATE.currentItem ? { ...STATE.currentItem, price: getCurrentPrice(STATE.currentItem.name, STATE.currentItem.price) } : null);
+
+    if (STATE.phase === 'chat' && STATE.currentItem) {
+      STATE.currentItem.price = getCurrentPrice(STATE.currentItem.name, STATE.currentItem.price);
+      updateOfferPanel(STATE.currentItem);
+    }
+  }
+
+  el.loginInput.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    loginAttempt();
+  });
+
+  el.cmdInput.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    commandAttempt();
+  });
+
+  el.buyBtn.addEventListener('click', handleBuy);
+  el.passBtn.addEventListener('click', handleReject);
+
+  window.addEventListener('storage', (e) => {
+    if (e.key === SHARED_KEY) refreshFromStorage();
+  });
+
+  setInterval(() => {
+    const data = loadShared();
+    if (!data) return;
+    el.moneyDisplay.textContent = (Number(data.money) || 0).toFixed(2);
+    syncHeader();
+    updateOfferPanel(STATE.currentItem ? { ...STATE.currentItem, price: getCurrentPrice(STATE.currentItem.name, STATE.currentItem.price) } : null);
+  }, 1000);
+
+  // boot
+  const data = ensureShared();
+  STATE.sessionId = data.sessionId;
+  STATE.correctPassword = derivePassword(STATE.sessionId);
+  STATE.dead = !!data.dead;
+  syncHeader();
+  initLoginScreen();
+  refreshFromStorage();
+})();
 </script>
 </body>
 </html>
