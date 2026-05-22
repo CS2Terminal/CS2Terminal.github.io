@@ -784,21 +784,53 @@ async function tHandlePass() {
 
 async function tHandleBuy() {
 
-  // Trigger shutdown audio immediately when BUY is pressed
+  if (!T.currentItem) return;
+
+  // SFX
   stopSfx('welcome');
   playSfx('glitch');
   playSfx('money');
 
-  // Save item to inventory BEFORE crash
-  const itemToSave = { ...T.currentItem, boughtAt: T.currentItem.price, acquiredTime: Date.now(), id: Date.now() + Math.random() };
+  const price = T.currentItem.price;
+
+  // Safety check: enough money?
+  if (DB.money < price) {
+    playSfx('error');
+    await tPrint(' [SYS] INSUFFICIENT FUNDS — TRANSACTION REJECTED', 'red');
+    await tPrint(` [SYS] REQUIRED: $${price.toFixed(2)} | AVAILABLE: $${DB.money.toFixed(2)}`, 'dim');
+    await tPrint('');
+    return;
+  }
+
+  // Deduct money
+  DB.money = Math.round((DB.money - price) * 100) / 100;
+  saveDB();
+
+  // Save item to inventory
+  const itemToSave = {
+    ...T.currentItem,
+    boughtAt: price,
+    acquiredTime: Date.now(),
+    id: Date.now() + Math.random()
+  };
+
   DB.inventory.push(itemToSave);
   saveDB();
-  await tPrint(`[${T.vendorName}]: ${BUYS[Math.floor(Math.random()*BUYS.length)]}`, 'yel');
+
+  // Terminal output
+  await tPrint(`[${T.vendorName}]: ${BUYS[Math.floor(Math.random() * BUYS.length)]}`, 'yel');
+  await tSleep(250);
+  await tPrint(` [SYS] ${T.currentItem.name} → VAULT STORAGE`, 'yel');
+  await tSleep(250);
+  await tPrint(` [SYS] -$${price.toFixed(2)} deducted`, 'dim');
+  await tSleep(250);
+  await tPrint(` [SYS] Wallet balance: $${DB.money.toFixed(2)}`, 'dim');
+  await tSleep(250);
+  await tPrint(' [SYS] Transfer complete. Inventory updated.', 'dim');
+
   await tSleep(300);
-  await tPrint(`  [SYS] ${T.currentItem.name} → VAULT`, 'yel');
-  await tSleep(300);
-  await tPrint('  [SYS] Transfer complete. Check inventory.', 'dim');
-  await tSleep(300);
+
+  // Crash sequence (keeps your original vibe)
   await tCrash('TRANSACTION ANOMALY — VAC DETECTED');
 }
 
