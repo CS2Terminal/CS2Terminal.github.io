@@ -1,276 +1,962 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CS2 // KEYGEN UTILITY v1.0</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CS2 // KEYGEN UTILITY v2.0</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
-  *{margin:0;padding:0;box-sizing:border-box}
-  :root{--green:#00ff41;--dim:#00882a;--red:#ff3333;--yellow:#ffcc00;--panel:#070f09;--border:#0f2e14;--text:#b8ffb8}
-  html,body{height:100%;background:#050a06;color:var(--green);font-family:'Share Tech Mono',monospace;display:flex;align-items:center;justify-content:center}
-  body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.12) 2px,rgba(0,0,0,0.12) 4px);pointer-events:none;z-index:999}
-  body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.75) 100%);pointer-events:none;z-index:998}
-  .app{width:720px;max-width:98vw;background:var(--panel);border:1px solid var(--border);box-shadow:0 0 30px rgba(0,255,65,0.07);display:flex;flex-direction:column;max-height:96vh;overflow:hidden}
-  .title-bar{background:#04100a;border-bottom:1px solid var(--border);padding:6px 14px;display:flex;align-items:center;gap:10px;font-size:10px;color:var(--dim);letter-spacing:2px;text-transform:uppercase}
-  .dot{width:8px;height:8px;border-radius:50%;background:var(--dim);box-shadow:0 0 6px var(--green);animation:blink 2.5s infinite}
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
-  .title-right{margin-left:auto;font-size:9px;opacity:0.4}
-  .body{flex:1;overflow-y:auto;padding:20px 22px;scrollbar-width:thin;scrollbar-color:var(--dim) transparent}
-  .wallet{border:1px solid #0f3a18;background:rgba(0,40,10,0.4);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
-  .wallet-amount{font-family:'VT323',monospace;font-size:38px;color:var(--yellow);line-height:1}
-  .wallet-label{font-size:11px;color:var(--dim);letter-spacing:2px;text-transform:uppercase}
-  .wallet-sub{font-size:10px;color:#1e5020;margin-top:2px}
-  .section-title{font-size:10px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:10px;border-left:2px solid var(--dim);padding-left:8px}
-  .tier-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
-  .tier{border:1px solid var(--border);padding:10px 12px;background:rgba(0,20,5,0.4);cursor:pointer;transition:border-color 0.15s,background 0.15s}
-  .tier:hover{border-color:var(--dim);background:rgba(0,30,8,0.6)}
-  .tier.selected{border-color:var(--green);background:rgba(0,40,10,0.6)}
-  .tier-name{font-size:11px;color:var(--yellow);margin-bottom:2px}
-  .tier-price{font-family:'VT323',monospace;font-size:24px;color:var(--green)}
-  .tier-desc{font-size:10px;color:var(--dim);margin-top:3px}
-  .input-row{display:flex;gap:10px;margin-bottom:20px}
-  .input-wrap{flex:1;border:1px solid var(--border);background:#040d06;padding:10px 14px;display:flex;align-items:center;gap:8px}
-  .input-wrap label{font-size:11px;color:var(--dim);white-space:nowrap}
-  .input-wrap input{flex:1;background:transparent;border:none;outline:none;color:var(--green);font-family:'Share Tech Mono',monospace;font-size:15px;caret-color:var(--green)}
-  .input-wrap input::placeholder{color:#1a4020}
-  .btn{border:1px solid var(--dim);background:#030d06;color:var(--green);font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;padding:0 18px;cursor:pointer;transition:background 0.15s}
-  .btn:hover{background:#0a2a10}
-  .btn.buy-btn{border-color:#22aa55;color:#00ff88}
-  .btn.buy-btn:hover{background:#052010}
-  .btn.buy-btn:disabled{border-color:#1a3a1f;color:#1a5020;cursor:not-allowed;background:transparent}
-  .result-box{border:1px solid #0f3a18;background:rgba(0,30,8,0.5);padding:16px 18px;margin-bottom:20px;min-height:80px}
-  .result-placeholder{color:#1a4020;font-size:12px}
-  .result-session{font-size:11px;color:var(--dim);margin-bottom:6px;letter-spacing:1px}
-  .result-password{font-family:'VT323',monospace;font-size:52px;color:var(--green);letter-spacing:10px;line-height:1;text-shadow:0 0 20px rgba(0,255,65,0.4)}
-  .result-password.locked{filter:blur(6px);color:#005518}
-  .result-cost{font-size:11px;color:var(--dim);margin-top:6px}
-  .result-status{font-size:12px;margin-top:8px}
-  .result-status.ok{color:#00ff88}
-  .result-status.err{color:var(--red)}
-  .result-status.warn{color:var(--yellow)}
-  .history-table{width:100%;border-collapse:collapse;font-size:12px}
-  .history-table th{text-align:left;padding:5px 10px;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;border-bottom:1px solid var(--border)}
-  .history-table td{padding:6px 10px;border-bottom:1px solid #081508;color:var(--text)}
-  .history-table tr:last-child td{border-bottom:none}
-  .td-pass{font-family:'VT323',monospace;font-size:22px;color:var(--green);letter-spacing:3px}
-  .td-cost{color:var(--yellow)}
-  .td-session{color:var(--dim)}
-  .history-empty{color:#1a4020;font-size:12px;padding:10px 0}
-  .sep{border:none;border-top:1px solid var(--border);margin:18px 0}
-  .status-bar{border-top:1px solid var(--border);padding:4px 14px;display:flex;justify-content:space-between;font-size:9px;color:#1a4020;letter-spacing:1px;background:#03090a}
-  .live{color:var(--dim)}
-  @keyframes glitch{0%{transform:translate(0);filter:none}20%{transform:translate(-3px,1px);filter:hue-rotate(90deg)}40%{transform:translate(3px,-1px);filter:brightness(2)}60%{transform:translate(-2px,2px);filter:none}80%{transform:translate(2px,0);filter:hue-rotate(180deg)}100%{transform:translate(0);filter:none}}
-  .glitch{animation:glitch 0.08s infinite}
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
+
+:root{
+  --green:#00ff41;
+  --green-dim:#00a33a;
+  --red:#ff3b3b;
+  --yellow:#ffcc33;
+  --bg:#050807;
+  --panel:#07110b;
+  --panel-2:#0a1510;
+  --border:#12311a;
+  --text:#bfecc3;
+  --muted:#2c6f41;
+  --shadow:0 0 26px rgba(0,255,70,0.08), inset 0 0 40px rgba(0,0,0,0.65);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(circle at 50% 35%, rgba(16,37,24,0.65), transparent 42%),
+    radial-gradient(circle at 50% 50%, #08110c, #050807 70%);
+  color:var(--green);
+  font-family:'Share Tech Mono', monospace;
+  overflow:hidden;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent 0,
+    transparent 2px,
+    rgba(0,0,0,0.15) 2px,
+    rgba(0,0,0,0.15) 4px
+  );
+  pointer-events:none;
+  z-index:50;
+}
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:radial-gradient(ellipse at center, transparent 58%, rgba(0,0,0,0.8) 100%);
+  pointer-events:none;
+  z-index:51;
+}
+
+.app{
+  width:min(920px, 98vw);
+  height:min(92vh, 980px);
+  margin:auto;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  border:1px solid var(--border);
+  background:linear-gradient(180deg, rgba(7,17,11,0.98), rgba(5,8,7,0.98));
+  box-shadow:var(--shadow);
+  position:relative;
+}
+
+/* top chrome */
+.title-bar{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 14px;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg, #08120d, #06100a);
+  color:var(--muted);
+  font-size:11px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+}
+.dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--green-dim);
+  box-shadow:0 0 10px rgba(0,255,65,0.7);
+  animation:blink 2.2s infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.title-right{
+  margin-left:auto;
+  font-size:10px;
+  opacity:.65;
+}
+.title-right b{color:var(--green)}
+
+.scan-banner{
+  border-bottom:1px solid var(--border);
+  padding:7px 14px;
+  background:rgba(0,0,0,0.18);
+  color:#548d61;
+  font-size:10px;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+}
+.scan-banner .live{color:var(--green)}
+
+.main{
+  flex:1;
+  overflow:auto;
+  padding:20px;
+  scrollbar-width:thin;
+  scrollbar-color:var(--green-dim) transparent;
+}
+.main::-webkit-scrollbar{width:4px}
+.main::-webkit-scrollbar-thumb{background:var(--green-dim)}
+
+/* reveal shell */
+.shell{
+  display:grid;
+  grid-template-columns: 1.15fr .95fr;
+  gap:16px;
+  align-items:start;
+}
+
+.panel{
+  border:1px solid var(--border);
+  background:linear-gradient(180deg, rgba(10,21,16,0.78), rgba(6,11,8,0.85));
+  box-shadow:inset 0 0 20px rgba(0,0,0,0.45);
+}
+
+.panel-head{
+  padding:10px 12px;
+  border-bottom:1px solid var(--border);
+  color:#6ea982;
+  font-size:10px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  background:rgba(0,0,0,0.12);
+}
+
+.wallet{
+  padding:14px;
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+}
+.wallet-left{min-width:0}
+.wallet-label{
+  font-size:10px;
+  letter-spacing:2px;
+  color:var(--muted);
+  text-transform:uppercase;
+}
+.wallet-amount{
+  font-family:'VT323', monospace;
+  font-size:54px;
+  line-height:1;
+  color:var(--yellow);
+  text-shadow:0 0 18px rgba(255,204,51,0.18);
+  margin-top:2px;
+}
+.wallet-sub{
+  font-size:11px;
+  color:#3d8450;
+  margin-top:8px;
+}
+.wallet-badge{
+  min-width:74px;
+  height:74px;
+  border:1px solid #214a2e;
+  background:radial-gradient(circle, rgba(0,255,70,0.18), rgba(0,0,0,0.12) 70%);
+  display:grid;
+  place-items:center;
+  color:rgba(0,255,100,0.8);
+  font-size:30px;
+  box-shadow:0 0 22px rgba(0,255,65,0.08);
+}
+
+.core{
+  padding:14px;
+}
+.section-title{
+  color:#6ea982;
+  font-size:10px;
+  letter-spacing:2.5px;
+  text-transform:uppercase;
+  margin-bottom:10px;
+  border-left:2px solid var(--green-dim);
+  padding-left:8px;
+}
+.input-row{
+  display:flex;
+  gap:10px;
+  align-items:stretch;
+}
+.input-wrap{
+  flex:1;
+  border:1px solid var(--border);
+  background:#040c06;
+  padding:10px 12px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.input-wrap label{
+  font-size:11px;
+  color:var(--muted);
+  white-space:nowrap;
+}
+.input-wrap input{
+  flex:1;
+  min-width:0;
+  border:none;
+  outline:none;
+  background:transparent;
+  color:var(--green);
+  font:inherit;
+  font-size:15px;
+  caret-color:var(--green);
+}
+.input-wrap input::placeholder{color:#184225}
+
+.btn{
+  border:1px solid var(--green-dim);
+  background:linear-gradient(180deg, #051006, #040a05);
+  color:var(--green);
+  font:inherit;
+  font-size:12px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  padding:0 16px;
+  cursor:pointer;
+  transition:transform .12s ease, background .15s ease, border-color .15s ease, opacity .15s ease;
+  min-height:42px;
+  white-space:nowrap;
+}
+.btn:hover{background:#0b2010;border-color:var(--green);transform:translateY(-1px)}
+.btn:disabled{
+  opacity:.42;
+  cursor:not-allowed;
+  transform:none;
+}
+.btn.unlock{
+  border-color:#2aa95a;
+  color:#00ff90;
+}
+.btn.unlock:hover{background:#071b0f}
+.btn.secondary{
+  border-color:#295338;
+  color:#8ad1a0;
+}
+.btn.secondary:hover{background:#08160d}
+
+.micro-row{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:10px;
+  color:#3e8a54;
+  font-size:10px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+
+.reveal{
+  margin-top:16px;
+  padding:16px 14px;
+  border:1px solid #174224;
+  background:linear-gradient(180deg, rgba(0,40,10,0.38), rgba(0,0,0,0.12));
+  min-height:160px;
+  position:relative;
+  overflow:hidden;
+}
+.reveal::before{
+  content:"";
+  position:absolute;
+  inset:-20%;
+  background:linear-gradient(115deg, transparent 38%, rgba(0,255,80,0.08) 50%, transparent 62%);
+  transform:translateX(-70%);
+  animation:scan 4.2s linear infinite;
+}
+@keyframes scan{
+  0%{transform:translateX(-80%)}
+  100%{transform:translateX(80%)}
+}
+.reveal-inner{position:relative; z-index:1}
+.reveal-title{
+  font-size:10px;
+  letter-spacing:3px;
+  color:#6ea982;
+  text-transform:uppercase;
+  margin-bottom:10px;
+}
+.placeholder{
+  color:#1a4020;
+  font-size:12px;
+  line-height:1.7;
+}
+
+.session-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:7px 10px;
+  border:1px solid #1d4229;
+  background:rgba(0,0,0,0.18);
+  color:#88c49b;
+  font-size:11px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  margin-bottom:12px;
+}
+.session-chip b{color:var(--green)}
+
+.password{
+  font-family:'VT323', monospace;
+  font-size:72px;
+  line-height:1;
+  letter-spacing:12px;
+  color:var(--green);
+  text-shadow:0 0 22px rgba(0,255,65,0.28);
+  margin:8px 0 6px;
+  min-height:74px;
+}
+.password.locked{
+  color:#0f4b1d;
+  text-shadow:none;
+  filter:blur(5px);
+}
+.meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px 16px;
+  margin-top:8px;
+  color:#6ea982;
+  font-size:11px;
+}
+.meta span{white-space:nowrap}
+.status{
+  margin-top:10px;
+  font-size:12px;
+  line-height:1.7;
+}
+.status.ok{color:#00ff8f}
+.status.warn{color:var(--yellow)}
+.status.err{color:var(--red)}
+.small-note{
+  margin-top:12px;
+  color:#407a50;
+  font-size:11px;
+  line-height:1.7;
+}
+
+.history{
+  margin-top:16px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.16);
+}
+.history-head{
+  padding:10px 12px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+  color:#6ea982;
+  font-size:10px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+}
+.history-list{
+  max-height:190px;
+  overflow:auto;
+  scrollbar-width:thin;
+  scrollbar-color:var(--green-dim) transparent;
+}
+.history-list::-webkit-scrollbar{width:4px}
+.history-list::-webkit-scrollbar-thumb{background:var(--green-dim)}
+.history-empty{
+  padding:12px;
+  color:#1d4229;
+  font-size:12px;
+}
+.history-item{
+  padding:10px 12px;
+  border-top:1px solid rgba(18,49,26,0.7);
+  display:grid;
+  grid-template-columns: 76px 1fr auto;
+  gap:10px;
+  align-items:center;
+  font-size:12px;
+}
+.history-item:first-child{border-top:none}
+.h-session{color:#88c49b}
+.h-pass{font-family:'VT323', monospace;font-size:24px;letter-spacing:4px;color:var(--green)}
+.h-time{color:#407a50;font-size:10px;letter-spacing:1px}
+
+.footer{
+  border-top:1px solid var(--border);
+  background:#050a06;
+  padding:6px 14px;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  color:#315a3d;
+  font-size:9px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+.footer b{color:var(--green)}
+.footer .money{color:var(--yellow)}
+
+.overlay{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  opacity:0;
+  background:
+    radial-gradient(circle at center, rgba(0,255,90,0.12), rgba(0,0,0,0.0) 45%),
+    radial-gradient(circle at center, rgba(0,0,0,0.0), rgba(0,0,0,0.92) 72%);
+  transition:opacity .5s ease;
+  z-index:20;
+}
+.overlay.show{opacity:1}
+
+.toasty{
+  position:fixed;
+  left:50%;
+  bottom:22px;
+  transform:translateX(-50%) translateY(20px);
+  background:rgba(4,12,6,0.96);
+  border:1px solid #1d4229;
+  color:#bfecc3;
+  padding:10px 14px;
+  font-size:12px;
+  letter-spacing:1px;
+  opacity:0;
+  transition:opacity .18s ease, transform .18s ease;
+  z-index:60;
+  box-shadow:0 0 20px rgba(0,0,0,0.45);
+}
+.toasty.show{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+
+@keyframes glitch{
+  0%{transform:translate(0);filter:none}
+  20%{transform:translate(-2px,1px);filter:hue-rotate(80deg)}
+  40%{transform:translate(2px,-1px);filter:brightness(1.8)}
+  60%{transform:translate(-1px,2px);filter:hue-rotate(180deg)}
+  80%{transform:translate(1px,0);filter:invert(0.05)}
+  100%{transform:translate(0);filter:none}
+}
+.glitch{animation:glitch .09s infinite}
+.unlocked-flash{animation:flash .7s ease}
+@keyframes flash{
+  0%{transform:scale(.99); filter:brightness(.8)}
+  50%{transform:scale(1.01); filter:brightness(1.7)}
+  100%{transform:scale(1); filter:none}
+}
+
+@media (max-width: 820px){
+  .shell{grid-template-columns:1fr}
+  .wallet-amount{font-size:48px}
+  .password{font-size:62px;letter-spacing:10px}
+  .history-item{grid-template-columns:64px 1fr; grid-template-areas:"a b" "a c"}
+  .h-session{grid-area:a}
+  .h-pass{grid-area:b}
+  .h-time{grid-area:c}
+}
 </style>
 </head>
 <body>
+<div class="overlay" id="overlay"></div>
+<div class="toasty" id="toasty"></div>
+
 <div class="app" id="app">
   <div class="title-bar">
     <div class="dot"></div>
-    <span>CS2 KEYGEN UTILITY v1.0 // SESSION DECODER</span>
-    <span class="title-right">LINKED: cs2_shared localStorage</span>
+    <span>CS2 KEYGEN UTILITY v2.0 // SESSION DECODER</span>
+    <span class="title-right">LINKED: <b>cs2_shared</b> localStorage</span>
   </div>
-  <div class="body">
-    <div class="wallet">
-      <div>
-        <div class="wallet-label">Available Balance</div>
-        <div class="wallet-amount" id="wallet-amount">$0.00</div>
-        <div class="wallet-sub" id="wallet-sub">earned by wasting the vendor's time</div>
-      </div>
-      <div style="font-size:28px;opacity:0.3">💰</div>
-    </div>
 
-    <div class="section-title">Select Decode Package</div>
-    <div class="tier-grid" id="tier-grid">
-      <div class="tier selected" data-tier="0">
-        <div class="tier-name">BASIC DECODE</div>
-        <div class="tier-price">$5.00</div>
-        <div class="tier-desc">Reveals the password. No frills.</div>
-      </div>
-      <div class="tier" data-tier="1">
-        <div class="tier-name">VERIFIED DECODE</div>
-        <div class="tier-price">$12.00</div>
-        <div class="tier-desc">Password + session integrity check.</div>
-      </div>
-      <div class="tier" data-tier="2">
-        <div class="tier-name">PRIORITY DECODE</div>
-        <div class="tier-price">$25.00</div>
-        <div class="tier-desc">Instant + logged to history forever.</div>
-      </div>
-      <div class="tier" data-tier="3">
-        <div class="tier-name">GHOST DECODE</div>
-        <div class="tier-price">$40.00</div>
-        <div class="tier-desc">No history entry. Untraceable.</div>
-      </div>
-    </div>
-
-    <div class="section-title">Target Session</div>
-    <div class="input-row">
-      <div class="input-wrap">
-        <label>SESSION ID ›</label>
-        <input type="number" id="session-input" placeholder="e.g. 4812" min="1000" max="9999"/>
-      </div>
-      <button class="btn" id="autofill-btn">AUTO-FILL</button>
-      <button class="btn buy-btn" id="decode-btn">DECODE ▶</button>
-    </div>
-
-    <div class="result-box" id="result-box">
-      <div class="result-placeholder" id="result-placeholder">// awaiting session input...</div>
-      <div id="result-content" style="display:none">
-        <div class="result-session" id="result-session"></div>
-        <div class="result-password locked" id="result-password">????</div>
-        <div class="result-cost" id="result-cost"></div>
-        <div class="result-status" id="result-status"></div>
-      </div>
-    </div>
-
-    <hr class="sep">
-
-    <div class="section-title">Decode History <span id="history-count" style="color:#1a5020">(0)</span></div>
-    <div class="history-empty" id="history-empty">No decodes purchased yet.</div>
-    <table class="history-table" id="history-table" style="display:none">
-      <thead><tr><th>SESSION</th><th>PASSWORD</th><th>PACKAGE</th><th>COST</th><th>TIME</th></tr></thead>
-      <tbody id="history-body"></tbody>
-    </table>
+  <div class="scan-banner">
+    <span>Algorithm active // 4-digit session decode</span>
+    <span class="live" id="live-status">SYNCING...</span>
   </div>
-  <div class="status-bar">
-    <span>ALGORITHM: <span class="live">ACTIVE</span> // KEY: cs2_shared</span>
-    <span id="status-time"></span>
+
+  <div class="main">
+    <div class="shell">
+      <div class="panel">
+        <div class="panel-head">Wallet / Access</div>
+        <div class="wallet">
+          <div class="wallet-left">
+            <div class="wallet-label">Available Balance</div>
+            <div class="wallet-amount" id="wallet-amount">$0.00</div>
+            <div class="wallet-sub" id="wallet-sub">claim your daily allotment or earn more from the terminal</div>
+          </div>
+          <div class="wallet-badge">⟡</div>
+        </div>
+
+        <div class="core">
+          <div class="section-title">Claim / Unlock</div>
+          <div class="input-row">
+            <div class="input-wrap" style="flex:1.2">
+              <label>SESSION ID ›</label>
+              <input type="number" id="session-input" placeholder="e.g. 4812" min="1000" max="9999" />
+            </div>
+            <button class="btn secondary" id="autofill-btn">AUTO-FILL</button>
+          </div>
+
+          <div class="micro-row">
+            <span id="daily-label">DAILY FREE: +$50</span>
+            <span id="unlock-label">UNLOCK COST: -$50</span>
+          </div>
+
+          <div class="input-row" style="margin-top:12px">
+            <button class="btn unlock" id="unlock-btn" style="flex:1">UNLOCK TERMINAL</button>
+            <button class="btn" id="daily-btn" style="width:170px">CLAIM DAILY $50</button>
+          </div>
+
+          <div class="reveal" id="result-box">
+            <div class="reveal-inner">
+              <div class="reveal-title">Decoder output</div>
+              <div class="placeholder" id="result-placeholder">// waiting for session ID or live terminal sync...</div>
+
+              <div id="result-content" style="display:none">
+                <div class="session-chip" id="result-session-chip">SESSION › <b>----</b></div>
+                <div class="password locked" id="result-password">????</div>
+                <div class="meta">
+                  <span id="result-cost"></span>
+                  <span id="result-algo"></span>
+                  <span id="result-copy"></span>
+                </div>
+                <div class="status" id="result-status"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="small-note">
+            One-time unlock per click. If you have the current live session open in the terminal, AUTO-FILL will pull it from shared storage.
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">Activity / History</div>
+        <div class="history">
+          <div class="history-head">
+            <span>Decode history</span>
+            <span id="history-count">(0)</span>
+          </div>
+          <div class="history-list" id="history-list">
+            <div class="history-empty" id="history-empty">No decodes purchased yet.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>SYNC: <b id="sync-state">LIVE</b></span>
+    <span>DAILY BONUS: <b id="daily-bonus-state">AVAILABLE</b></span>
+    <span>UNLOCK FEE: <b class="money">$50.00</b></span>
+    <span id="clock"></span>
   </div>
 </div>
+
 <script>
 const SHARED_KEY  = 'cs2_shared';
 const CRACKER_KEY = 'cs2_cracker_data';
+const DAILY_KEY   = 'cs2_cracker_daily_reward';
 
-function derivePassword(sid) { return String((sid*31+7)%9999).padStart(4,'0'); }
+function derivePassword(sid) {
+  return String((sid * 31 + 7) % 9999).padStart(4, '0');
+}
 
-function loadShared() { try{return JSON.parse(localStorage.getItem(SHARED_KEY))||null}catch(e){return null} }
-function saveShared(o) { localStorage.setItem(SHARED_KEY,JSON.stringify(o)); }
-function getMoney() { const s=loadShared(); return s?(s.money||0):0; }
-function setMoney(v) { const s=loadShared()||{}; s.money=Math.max(0,Math.round(v*100)/100); saveShared(s); }
-function loadCracker() { try{return JSON.parse(localStorage.getItem(CRACKER_KEY))||{history:[]}}catch(e){return{history:[]}} }
-function saveCracker(d) { localStorage.setItem(CRACKER_KEY,JSON.stringify(d)); }
+function loadShared() {
+  try { return JSON.parse(localStorage.getItem(SHARED_KEY)) || null; }
+  catch { return null; }
+}
+function saveShared(obj) {
+  localStorage.setItem(SHARED_KEY, JSON.stringify(obj));
+}
+function getMoney() {
+  const s = loadShared();
+  return s ? (s.money || 0) : 0;
+}
+function setMoney(v) {
+  const s = loadShared() || {};
+  s.money = Math.max(0, Math.round(v * 100) / 100);
+  saveShared(s);
+}
+function loadCracker() {
+  try { return JSON.parse(localStorage.getItem(CRACKER_KEY)) || { history: [] }; }
+  catch { return { history: [] }; }
+}
+function saveCracker(d) {
+  localStorage.setItem(CRACKER_KEY, JSON.stringify(d));
+}
+function loadDailyState() {
+  try { return JSON.parse(localStorage.getItem(DAILY_KEY)) || { lastClaim: 0 }; }
+  catch { return { lastClaim: 0 }; }
+}
+function saveDailyState(d) {
+  localStorage.setItem(DAILY_KEY, JSON.stringify(d));
+}
 
-const TIERS=[
-  {name:'BASIC DECODE',    price:5.00,  ghost:false, verified:false},
-  {name:'VERIFIED DECODE', price:12.00, ghost:false, verified:true},
-  {name:'PRIORITY DECODE', price:25.00, ghost:false, verified:true},
-  {name:'GHOST DECODE',    price:40.00, ghost:true,  verified:true},
-];
-let selectedTier=0;
-
-const walletAmount  = document.getElementById('wallet-amount');
-const walletSub     = document.getElementById('wallet-sub');
-const sessionInput  = document.getElementById('session-input');
-const decodeBtn     = document.getElementById('decode-btn');
-const autofillBtn   = document.getElementById('autofill-btn');
+const walletAmount      = document.getElementById('wallet-amount');
+const walletSub         = document.getElementById('wallet-sub');
+const liveStatus        = document.getElementById('live-status');
+const syncState         = document.getElementById('sync-state');
+const dailyBonusState   = document.getElementById('daily-bonus-state');
+const sessionInput      = document.getElementById('session-input');
+const autofillBtn       = document.getElementById('autofill-btn');
+const unlockBtn         = document.getElementById('unlock-btn');
+const dailyBtn          = document.getElementById('daily-btn');
 const resultPlaceholder = document.getElementById('result-placeholder');
-const resultContent = document.getElementById('result-content');
-const resultSession = document.getElementById('result-session');
-const resultPassword= document.getElementById('result-password');
-const resultCost    = document.getElementById('result-cost');
-const resultStatus  = document.getElementById('result-status');
-const historyEmpty  = document.getElementById('history-empty');
-const historyTable  = document.getElementById('history-table');
-const historyBody   = document.getElementById('history-body');
-const historyCount  = document.getElementById('history-count');
-const app           = document.getElementById('app');
+const resultContent     = document.getElementById('result-content');
+const resultSessionChip = document.getElementById('result-session-chip');
+const resultPassword    = document.getElementById('result-password');
+const resultCost        = document.getElementById('result-cost');
+const resultAlgo        = document.getElementById('result-algo');
+const resultCopy        = document.getElementById('result-copy');
+const resultStatus      = document.getElementById('result-status');
+const historyList       = document.getElementById('history-list');
+const historyEmpty      = document.getElementById('history-empty');
+const historyCount      = document.getElementById('history-count');
+const app               = document.getElementById('app');
+const overlay           = document.getElementById('overlay');
+const toasty            = document.getElementById('toasty');
+const clock             = document.getElementById('clock');
 
-function refreshWallet() {
-  const money = getMoney();
-  walletAmount.textContent = '$'+money.toFixed(2);
-  const ts = loadShared();
-  if (!ts) { walletSub.style.color='#aa3333'; walletSub.textContent='⚠ terminal not found — open cs2_terminal.html first'; }
-  else { walletSub.style.color=''; walletSub.textContent='earned by wasting the vendor\'s time'; }
+let selectedSessionId = null;
+let revealTimer = null;
+let syncTimer = null;
+
+function toast(msg) {
+  toasty.textContent = msg;
+  toasty.classList.add('show');
+  clearTimeout(toasty._t);
+  toasty._t = setTimeout(() => toasty.classList.remove('show'), 1700);
 }
 
-document.getElementById('tier-grid').addEventListener('click', e=>{
-  const t=e.target.closest('[data-tier]'); if(!t) return;
-  selectedTier=parseInt(t.dataset.tier);
-  document.querySelectorAll('.tier').forEach(el=>el.classList.toggle('selected',el===t));
-});
-
-autofillBtn.addEventListener('click',()=>{
-  const ts=loadShared();
-  if(!ts||!ts.sessionId){flash(autofillBtn,'⚠ NO TERMINAL');return;}
-  sessionInput.value=ts.sessionId; flash(autofillBtn,'✓ FILLED');
-});
-
-function flash(btn,text){const o=btn.textContent;btn.textContent=text;setTimeout(()=>btn.textContent=o,1200);}
-
-decodeBtn.addEventListener('click',()=>{
-  const rawId=parseInt(sessionInput.value);
-  if(!rawId||rawId<1000||rawId>9999){showResult(null,'err','Invalid session ID. Must be 4 digits (1000–9999).',null,null);return;}
-  const tier=TIERS[selectedTier];
-  const money=getMoney();
-  if(money<tier.price){showResult(rawId,'err',`Insufficient funds. Need $${tier.price.toFixed(2)}, have $${money.toFixed(2)}. Go reject more items.`,null,null);return;}
-  setMoney(money-tier.price);
-  refreshWallet();
-  const password=derivePassword(rawId);
-  let statusMsg='',statusCls='ok';
-  const ts=loadShared();
-  if(tier.verified&&ts){
-    if(ts.sessionId===rawId){statusMsg='✓ Session verified against live terminal — this is the CURRENT active session.';}
-    else{statusMsg=`⚠ Session ${rawId} differs from live session (${ts.sessionId}). May be stale.`;statusCls='warn';}
-  } else {
-    statusMsg=`✓ Decoded. Package: ${tier.name}.`;
-  }
-  if(!tier.ghost){
-    const d=loadCracker();
-    d.history.unshift({sessionId:rawId,password,tier:tier.name,cost:tier.price,time:new Date().toLocaleTimeString()});
-    saveCracker(d);
-    renderHistory();
-  }
-  showResult(rawId,statusCls,statusMsg,password,tier);
-});
-
-function showResult(sessionId,statusCls,statusMsg,password,tier){
-  resultPlaceholder.style.display='none';
-  resultContent.style.display='block';
-  resultSession.textContent=sessionId?`SESSION: ${sessionId}  //  PACKAGE: ${tier?tier.name:'—'}`:'INPUT ERROR';
-  if(password){
-    resultPassword.classList.remove('locked');
-    resultPassword.textContent='????';
-    let r=0,total=14;
-    const iv=setInterval(()=>{
-      if(r>=total){clearInterval(iv);resultPassword.textContent=password;return;}
-      resultPassword.textContent=Array.from({length:4},(_,i)=>r>(total*(i+1)/4)?password[i]:Math.floor(Math.random()*10)).join('');
-      r++;
-    },55);
-    resultCost.textContent=`Cost deducted: -$${tier.price.toFixed(2)}  //  New balance: $${getMoney().toFixed(2)}`;
-  } else {
-    resultPassword.classList.add('locked');
-    resultPassword.textContent='????';
-    resultCost.textContent='';
-  }
-  resultStatus.className='result-status '+(statusCls||'err');
-  resultStatus.textContent=statusMsg;
+function flashApp(ms = 220) {
   app.classList.add('glitch');
-  setTimeout(()=>app.classList.remove('glitch'),200);
+  setTimeout(() => app.classList.remove('glitch'), ms);
 }
 
-function renderHistory(){
-  const d=loadCracker();
-  const h=d.history;
-  historyCount.textContent=`(${h.length})`;
-  if(h.length===0){historyEmpty.style.display='block';historyTable.style.display='none';return;}
-  historyEmpty.style.display='none';
-  historyTable.style.display='table';
-  historyBody.innerHTML=h.map(e=>`<tr>
-    <td class="td-session">${e.sessionId}</td>
-    <td class="td-pass">${e.password}</td>
-    <td style="color:#1e8040;font-size:10px">${e.tier}</td>
-    <td class="td-cost">$${e.cost.toFixed(2)}</td>
-    <td style="color:#1e5020;font-size:10px">${e.time}</td>
-  </tr>`).join('');
+function setOverlay(on) {
+  overlay.classList.toggle('show', !!on);
 }
 
-setInterval(()=>{document.getElementById('status-time').textContent=new Date().toLocaleTimeString();},1000);
-setInterval(refreshWallet,1500);
-refreshWallet();
+function updateClock() {
+  clock.textContent = new Date().toLocaleTimeString();
+}
+
+function updateWallet() {
+  walletAmount.textContent = '$' + getMoney().toFixed(2);
+
+  const s = loadShared();
+  if (!s || !s.sessionId) {
+    liveStatus.textContent = 'NO TERMINAL FOUND';
+    syncState.textContent = 'OFFLINE';
+    syncState.style.color = 'var(--red)';
+    walletSub.textContent = 'open the terminal first to populate a live session';
+    walletSub.style.color = '#aa3333';
+  } else {
+    liveStatus.textContent = 'SESSION SYNC OK';
+    syncState.textContent = 'LIVE';
+    syncState.style.color = '';
+    walletSub.textContent = 'earned by wasting the vendor\'s time';
+    walletSub.style.color = '';
+  }
+
+  updateDailyAvailability();
+}
+
+function updateDailyAvailability() {
+  const d = loadDailyState();
+  const now = Date.now();
+  const cooldown = 24 * 60 * 60 * 1000;
+  const elapsed = now - (d.lastClaim || 0);
+
+  if (elapsed >= cooldown) {
+    dailyBtn.disabled = false;
+    dailyBonusState.textContent = 'AVAILABLE';
+    dailyBonusState.style.color = 'var(--green)';
+    dailyBtn.textContent = 'CLAIM DAILY $50';
+  } else {
+    dailyBtn.disabled = true;
+    dailyBonusState.textContent = formatRemaining(cooldown - elapsed);
+    dailyBonusState.style.color = 'var(--yellow)';
+    dailyBtn.textContent = 'DAILY CLAIMED';
+  }
+}
+
+function formatRemaining(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = String(Math.floor(total / 3600)).padStart(2, '0');
+  const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
+  const s = String(total % 60).padStart(2, '0');
+  return `NEXT: ${h}:${m}:${s}`;
+}
+
+function autofillSession() {
+  const s = loadShared();
+  if (!s || !s.sessionId) {
+    toast('NO LIVE TERMINAL');
+    flashApp();
+    return;
+  }
+  sessionInput.value = s.sessionId;
+  selectedSessionId = s.sessionId;
+  toast('SESSION FILLED');
+  flashApp();
+}
+
+function animateReveal(password) {
+  clearInterval(revealTimer);
+  const chars = '0123456789';
+  let frame = 0;
+  const totalFrames = 18;
+
+  resultPassword.classList.remove('locked');
+  resultPassword.textContent = '????';
+
+  revealTimer = setInterval(() => {
+    frame++;
+    if (frame >= totalFrames) {
+      clearInterval(revealTimer);
+      resultPassword.textContent = password;
+      resultPassword.classList.remove('locked');
+      flashApp(180);
+      return;
+    }
+
+    const shown = password.split('').map((ch, i) => {
+      const lockThreshold = Math.floor(totalFrames * ((i + 1) / 4));
+      return frame > lockThreshold ? ch : chars[Math.floor(Math.random() * chars.length)];
+    }).join('');
+
+    resultPassword.textContent = shown;
+  }, 48);
+}
+
+function showResult({ sessionId, statusType, statusMsg, password, cost, verifiedText }) {
+  resultPlaceholder.style.display = 'none';
+  resultContent.style.display = 'block';
+
+  resultSessionChip.innerHTML = `SESSION › <b>${sessionId}</b>`;
+  resultCost.textContent = cost ? `Cost deducted: -$${cost.toFixed(2)}  //  New balance: $${getMoney().toFixed(2)}` : '';
+  resultAlgo.textContent = 'ALGO: ((sessionId × 31) + 7) % 9999';
+  resultCopy.textContent = password ? 'Password copied automatically if you use the button below.' : '';
+
+  resultStatus.className = 'status ' + statusType;
+  resultStatus.textContent = verifiedText ? `${statusMsg} ${verifiedText}` : statusMsg;
+
+  if (password) animateReveal(password);
+  else {
+    resultPassword.classList.add('locked');
+    resultPassword.textContent = '????';
+  }
+}
+
+function pushHistory(entry) {
+  const d = loadCracker();
+  d.history.unshift(entry);
+  saveCracker(d);
+  renderHistory();
+}
+
+function renderHistory() {
+  const d = loadCracker();
+  const history = d.history || [];
+  historyCount.textContent = `(${history.length})`;
+
+  if (!history.length) {
+    historyEmpty.style.display = 'block';
+    historyList.innerHTML = '';
+    historyList.appendChild(historyEmpty);
+    return;
+  }
+
+  historyEmpty.style.display = 'none';
+  historyList.innerHTML = history.map(item => `
+    <div class="history-item">
+      <div class="h-session">${item.sessionId}</div>
+      <div class="h-pass">${item.password}</div>
+      <div class="h-time">${item.time} · ${item.cost.toFixed(2)} · ${item.type}</div>
+    </div>
+  `).join('');
+}
+
+function copyPassword(text) {
+  if (!text || text === '????') return;
+  navigator.clipboard?.writeText(text).then(() => {
+    toast('PASSWORD COPIED');
+  }).catch(() => {
+    toast('COPY FAILED');
+  });
+}
+
+function unlockTerminal() {
+  const rawId = parseInt(sessionInput.value, 10);
+
+  if (!rawId || rawId < 1000 || rawId > 9999) {
+    setOverlay(true);
+    setTimeout(() => setOverlay(false), 240);
+    showResult({
+      sessionId: '----',
+      statusType: 'err',
+      statusMsg: 'Invalid session ID. Use a 4-digit number.',
+      password: null,
+      cost: null
+    });
+    flashApp();
+    return;
+  }
+
+  const unlockCost = 50.00;
+  const money = getMoney();
+
+  if (money < unlockCost) {
+    setOverlay(true);
+    setTimeout(() => setOverlay(false), 240);
+    showResult({
+      sessionId: rawId,
+      statusType: 'err',
+      statusMsg: `Insufficient funds. Unlock cost is $${unlockCost.toFixed(2)}.`,
+      password: null,
+      cost: null
+    });
+    toast('NOT ENOUGH BALANCE');
+    return;
+  }
+
+  setOverlay(true);
+  unlockBtn.disabled = true;
+  autofillBtn.disabled = true;
+  dailyBtn.disabled = true;
+
+  setTimeout(() => {
+    setMoney(getMoney() - unlockCost);
+    updateWallet();
+
+    const password = derivePassword(rawId);
+    const live = loadShared();
+    const isLive = live && live.sessionId === rawId;
+
+    let statusMsg = 'Terminal unlocked.';
+    let statusType = 'ok';
+    let verifiedText = '';
+
+    if (isLive) {
+      verifiedText = 'Live session verified.';
+      statusMsg = 'Decoder matched the current active terminal.';
+    } else if (live && live.sessionId) {
+      verifiedText = `Live session is ${live.sessionId}.`;
+      statusMsg = 'Decoder completed for a non-live session.';
+      statusType = 'warn';
+    } else {
+      verifiedText = '';
+      statusMsg = 'Decoder completed.';
+      statusType = 'warn';
+    }
+
+    showResult({
+      sessionId: rawId,
+      statusType,
+      statusMsg,
+      password,
+      cost: unlockCost,
+      verifiedText
+    });
+
+    pushHistory({
+      sessionId: rawId,
+      password,
+      type: isLive ? 'LIVE' : 'OFFLINE',
+      cost: unlockCost,
+      time: new Date().toLocaleTimeString()
+    });
+
+    toast('TERMINAL UNLOCKED');
+    flashApp(240);
+
+    setTimeout(() => {
+      setOverlay(false);
+      unlockBtn.disabled = false;
+      autofillBtn.disabled = false;
+      updateDailyAvailability();
+    }, 780);
+  }, 220);
+}
+
+function claimDaily() {
+  const d = loadDailyState();
+  const now = Date.now();
+  const cooldown = 24 * 60 * 60 * 1000;
+
+  if (now - (d.lastClaim || 0) < cooldown) {
+    toast('DAILY ALREADY CLAIMED');
+    updateDailyAvailability();
+    return;
+  }
+
+  d.lastClaim = now;
+  saveDailyState(d);
+
+  setMoney(getMoney() + 50);
+  updateWallet();
+  updateDailyAvailability();
+  toast('DAILY +$50 CLAIMED');
+  flashApp(200);
+
+  setOverlay(true);
+  setTimeout(() => setOverlay(false), 160);
+}
+
+document.getElementById('unlock-btn').addEventListener('click', unlockTerminal);
+document.getElementById('daily-btn').addEventListener('click', claimDaily);
+autofillBtn.addEventListener('click', autofillSession);
+sessionInput.addEventListener('input', () => { selectedSessionId = parseInt(sessionInput.value, 10) || null; });
+
+sessionInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') unlockTerminal();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    autofillSession();
+  }
+});
+
+setInterval(() => {
+  updateWallet();
+  renderHistory();
+}, 1500);
+
+setInterval(updateClock, 1000);
+
+updateWallet();
+updateClock();
 renderHistory();
-document.getElementById('status-time').textContent=new Date().toLocaleTimeString();
+
+const live = loadShared();
+if (live && live.sessionId) {
+  liveStatus.textContent = `LIVE SESSION: ${live.sessionId}`;
+} else {
+  liveStatus.textContent = 'WAITING FOR TERMINAL';
+}
 </script>
 </body>
 </html>
