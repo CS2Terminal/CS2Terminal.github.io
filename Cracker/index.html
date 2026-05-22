@@ -573,390 +573,603 @@ body::after{
 </div>
 
 <script>
-const SHARED_KEY  = 'cs2_shared';
-const CRACKER_KEY = 'cs2_cracker_data';
-const DAILY_KEY   = 'cs2_cracker_daily_reward';
+(() => {
+  'use strict';
 
-function derivePassword(sid) {
-  return String((sid * 31 + 7) % 9999).padStart(4, '0');
-}
+  const SHARED_KEY = 'cs2_shared';
+  const CRACKER_KEY = 'cs2_cracker_data';
+  const DAILY_KEY = 'cs2_cracker_daily_reward';
 
-function loadShared() {
-  try { return JSON.parse(localStorage.getItem(SHARED_KEY)) || null; }
-  catch { return null; }
-}
-function saveShared(obj) {
-  localStorage.setItem(SHARED_KEY, JSON.stringify(obj));
-}
-function getMoney() {
-  const s = loadShared();
-  return s ? (s.money || 0) : 0;
-}
-function setMoney(v) {
-  const s = loadShared() || {};
-  s.money = Math.max(0, Math.round(v * 100) / 100);
-  saveShared(s);
-}
-function loadCracker() {
-  try { return JSON.parse(localStorage.getItem(CRACKER_KEY)) || { history: [] }; }
-  catch { return { history: [] }; }
-}
-function saveCracker(d) {
-  localStorage.setItem(CRACKER_KEY, JSON.stringify(d));
-}
-function loadDailyState() {
-  try { return JSON.parse(localStorage.getItem(DAILY_KEY)) || { lastClaim: 0 }; }
-  catch { return { lastClaim: 0 }; }
-}
-function saveDailyState(d) {
-  localStorage.setItem(DAILY_KEY, JSON.stringify(d));
-}
+  const UNLOCK_COST = 50;
+  const DAILY_REWARD = 50;
+  const COOLDOWN_MS = 24 * 60 * 60 * 1000;
+  const HISTORY_LIMIT = 25;
 
-const walletAmount      = document.getElementById('wallet-amount');
-const walletSub         = document.getElementById('wallet-sub');
-const liveStatus        = document.getElementById('live-status');
-const syncState         = document.getElementById('sync-state');
-const dailyBonusState   = document.getElementById('daily-bonus-state');
-const sessionInput      = document.getElementById('session-input');
-const autofillBtn       = document.getElementById('autofill-btn');
-const unlockBtn         = document.getElementById('unlock-btn');
-const dailyBtn          = document.getElementById('daily-btn');
-const resultPlaceholder = document.getElementById('result-placeholder');
-const resultContent     = document.getElementById('result-content');
-const resultSessionChip = document.getElementById('result-session-chip');
-const resultPassword    = document.getElementById('result-password');
-const resultCost        = document.getElementById('result-cost');
-const resultAlgo        = document.getElementById('result-algo');
-const resultCopy        = document.getElementById('result-copy');
-const resultStatus      = document.getElementById('result-status');
-const historyList       = document.getElementById('history-list');
-const historyEmpty      = document.getElementById('history-empty');
-const historyCount      = document.getElementById('history-count');
-const app               = document.getElementById('app');
-const overlay           = document.getElementById('overlay');
-const toasty            = document.getElementById('toasty');
-const clock             = document.getElementById('clock');
+  const byId = (id) => document.getElementById(id);
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-let selectedSessionId = null;
-let revealTimer = null;
-let syncTimer = null;
+  const el = {
+    walletAmount: byId('wallet-amount'),
+    walletSub: byId('wallet-sub'),
+    liveStatus: byId('live-status'),
+    syncState: byId('sync-state'),
+    dailyBonusState: byId('daily-bonus-state'),
+    sessionInput: byId('session-input'),
+    autofillBtn: byId('autofill-btn'),
+    unlockBtn: byId('unlock-btn'),
+    dailyBtn: byId('daily-btn'),
+    resultPlaceholder: byId('result-placeholder'),
+    resultContent: byId('result-content'),
+    resultSessionChip: byId('result-session-chip'),
+    resultPassword: byId('result-password'),
+    resultCost: byId('result-cost'),
+    resultAlgo: byId('result-algo'),
+    resultCopy: byId('result-copy'),
+    resultStatus: byId('result-status'),
+    historyList: byId('history-list'),
+    historyEmpty: byId('history-empty'),
+    historyCount: byId('history-count'),
+    app: byId('app'),
+    overlay: byId('overlay'),
+    toasty: byId('toasty'),
+    clock: byId('clock'),
+  };
 
-function toast(msg) {
-  toasty.textContent = msg;
-  toasty.classList.add('show');
-  clearTimeout(toasty._t);
-  toasty._t = setTimeout(() => toasty.classList.remove('show'), 1700);
-}
+  if (!el.walletAmount || !el.sessionInput || !el.unlockBtn) return;
 
-function flashApp(ms = 220) {
-  app.classList.add('glitch');
-  setTimeout(() => app.classList.remove('glitch'), ms);
-}
+  const state = {
+    currentReveal: null,
+    revealTimer: null,
+    syncTimer: null,
+    selectedSessionId: null,
+  };
 
-function setOverlay(on) {
-  overlay.classList.toggle('show', !!on);
-}
-
-function updateClock() {
-  clock.textContent = new Date().toLocaleTimeString();
-}
-
-function updateWallet() {
-  walletAmount.textContent = '$' + getMoney().toFixed(2);
-
-  const s = loadShared();
-  if (!s || !s.sessionId) {
-    liveStatus.textContent = 'NO TERMINAL FOUND';
-    syncState.textContent = 'OFFLINE';
-    syncState.style.color = 'var(--red)';
-    walletSub.textContent = 'open the terminal first to populate a live session';
-    walletSub.style.color = '#aa3333';
-  } else {
-    liveStatus.textContent = 'SESSION SYNC OK';
-    syncState.textContent = 'LIVE';
-    syncState.style.color = '';
-    walletSub.textContent = 'earned by wasting the vendor\'s time';
-    walletSub.style.color = '';
+  function toast(msg) {
+    if (!el.toasty) return;
+    el.toasty.textContent = msg;
+    el.toasty.classList.add('show');
+    clearTimeout(el.toasty._t);
+    el.toasty._t = setTimeout(() => el.toasty.classList.remove('show'), 1700);
   }
 
-  updateDailyAvailability();
-}
-
-function updateDailyAvailability() {
-  const d = loadDailyState();
-  const now = Date.now();
-  const cooldown = 24 * 60 * 60 * 1000;
-  const elapsed = now - (d.lastClaim || 0);
-
-  if (elapsed >= cooldown) {
-    dailyBtn.disabled = false;
-    dailyBonusState.textContent = 'AVAILABLE';
-    dailyBonusState.style.color = 'var(--green)';
-    dailyBtn.textContent = 'CLAIM DAILY $50';
-  } else {
-    dailyBtn.disabled = true;
-    dailyBonusState.textContent = formatRemaining(cooldown - elapsed);
-    dailyBonusState.style.color = 'var(--yellow)';
-    dailyBtn.textContent = 'DAILY CLAIMED';
+  function flashApp(ms = 220) {
+    if (!el.app) return;
+    el.app.classList.add('glitch');
+    setTimeout(() => el.app.classList.remove('glitch'), ms);
   }
-}
 
-function formatRemaining(ms) {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  const h = String(Math.floor(total / 3600)).padStart(2, '0');
-  const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
-  const s = String(total % 60).padStart(2, '0');
-  return `NEXT: ${h}:${m}:${s}`;
-}
+  function setOverlay(on) {
+    if (el.overlay) el.overlay.classList.toggle('show', !!on);
+  }
 
-function autofillSession() {
-  const s = loadShared();
-  if (!s || !s.sessionId) {
-    toast('NO LIVE TERMINAL');
+  function updateClock() {
+    if (el.clock) el.clock.textContent = new Date().toLocaleTimeString();
+  }
+
+  function formatMoney(n) {
+    return '$' + Number(n || 0).toFixed(2);
+  }
+
+  function round2(n) {
+    return Math.round(Number(n || 0) * 100) / 100;
+  }
+
+  function derivePassword(sessionId) {
+    const sid = Number(sessionId);
+    return String((sid * 31 + 7) % 9999).padStart(4, '0');
+  }
+
+  function newSessionId() {
+    return Math.floor(1000 + Math.random() * 8999);
+  }
+
+  function makeId() {
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  }
+
+  function safeParse(raw, fallback) {
+    try {
+      if (raw == null || raw === '') return fallback;
+      return JSON.parse(raw);
+    } catch {
+      return fallback;
+    }
+  }
+
+  function defaultShared() {
+    return {
+      schemaVersion: 2,
+      sessionId: newSessionId(),
+      dead: false,
+      money: 0,
+      inventory: [],
+      prices: {},
+      priceLog: [],
+      marketTick: 0,
+      marketUpdatedAt: 0,
+      nextTick: 0,
+    };
+  }
+
+  function normalizeShared(raw) {
+    const base = defaultShared();
+    const src = raw && typeof raw === 'object' ? raw : {};
+
+    const out = {
+      ...base,
+      ...src,
+    };
+
+    out.sessionId = Number.isFinite(Number(out.sessionId)) ? Number(out.sessionId) : base.sessionId;
+    out.dead = !!out.dead;
+    out.money = Number.isFinite(Number(out.money)) ? round2(out.money) : 0;
+
+    out.inventory = Array.isArray(out.inventory)
+      ? out.inventory
+          .filter((item) => item && typeof item === 'object')
+          .map((item) => ({
+            name: String(item.name || 'Unknown Item'),
+            rarity: String(item.rarity || 'consumer'),
+            wear: String(item.wear || 'Unknown'),
+            price: round2(item.price),
+            float: String(item.float || '0.0000'),
+            boughtAt: round2(item.boughtAt ?? item.price ?? 0),
+            acquiredTime: Number(item.acquiredTime) || Date.now(),
+            id: String(item.id || makeId()),
+          }))
+      : [];
+
+    out.prices = out.prices && typeof out.prices === 'object' && !Array.isArray(out.prices) ? out.prices : {};
+    out.priceLog = Array.isArray(out.priceLog) ? out.priceLog : [];
+
+    out.marketTick = Number.isFinite(Number(out.marketTick)) ? Number(out.marketTick) : 0;
+    out.marketUpdatedAt = Number.isFinite(Number(out.marketUpdatedAt)) ? Number(out.marketUpdatedAt) : 0;
+    out.nextTick = Number.isFinite(Number(out.nextTick)) ? Number(out.nextTick) : 0;
+
+    return out;
+  }
+
+  function readShared() {
+    return normalizeShared(safeParse(localStorage.getItem(SHARED_KEY), null));
+  }
+
+  function writeShared(data) {
+    localStorage.setItem(SHARED_KEY, JSON.stringify(normalizeShared(data)));
+  }
+
+  function ensureShared() {
+    const existing = safeParse(localStorage.getItem(SHARED_KEY), null);
+    if (!existing) {
+      const fresh = defaultShared();
+      writeShared(fresh);
+      return fresh;
+    }
+    const normalized = normalizeShared(existing);
+    writeShared(normalized);
+    return normalized;
+  }
+
+  function updateShared(mutator) {
+    const current = readShared();
+    const draft = JSON.parse(JSON.stringify(current));
+    const next = mutator(draft) || draft;
+    const normalized = normalizeShared(next);
+    writeShared(normalized);
+    return normalized;
+  }
+
+  function loadCracker() {
+    return safeParse(localStorage.getItem(CRACKER_KEY), { history: [] }) || { history: [] };
+  }
+
+  function saveCracker(data) {
+    localStorage.setItem(CRACKER_KEY, JSON.stringify({
+      history: Array.isArray(data.history) ? data.history : [],
+    }));
+  }
+
+  function loadDailyState() {
+    return safeParse(localStorage.getItem(DAILY_KEY), { lastClaim: 0 }) || { lastClaim: 0 };
+  }
+
+  function saveDailyState(data) {
+    localStorage.setItem(DAILY_KEY, JSON.stringify({
+      lastClaim: Number(data.lastClaim) || 0,
+    }));
+  }
+
+  function getMoney() {
+    const store = readShared();
+    return round2(store.money);
+  }
+
+  function setMoney(v) {
+    updateShared((draft) => {
+      draft.money = Math.max(0, round2(v));
+      return draft;
+    });
+    updateWallet();
+  }
+
+  function updateWallet() {
+    const store = readShared();
+    el.walletAmount.textContent = formatMoney(store.money);
+
+    if (!store.sessionId) {
+      el.liveStatus.textContent = 'WAITING FOR TERMINAL';
+      el.syncState.textContent = 'OFFLINE';
+      el.syncState.style.color = 'var(--red)';
+      el.walletSub.textContent = 'open the terminal first to populate a live session';
+      el.walletSub.style.color = '#aa3333';
+    } else {
+      el.liveStatus.textContent = `LIVE SESSION: ${store.sessionId}`;
+      el.syncState.textContent = 'LIVE';
+      el.syncState.style.color = '';
+      el.walletSub.textContent = 'earned by wasting the vendor\'s time';
+      el.walletSub.style.color = '';
+    }
+
+    updateDailyAvailability();
+  }
+
+  function updateDailyAvailability() {
+    const d = loadDailyState();
+    const now = Date.now();
+    const elapsed = now - (d.lastClaim || 0);
+
+    if (elapsed >= COOLDOWN_MS) {
+      el.dailyBtn.disabled = false;
+      el.dailyBonusState.textContent = 'AVAILABLE';
+      el.dailyBonusState.style.color = 'var(--green)';
+      el.dailyBtn.textContent = 'CLAIM DAILY $50';
+    } else {
+      el.dailyBtn.disabled = true;
+      el.dailyBonusState.textContent = formatRemaining(COOLDOWN_MS - elapsed);
+      el.dailyBonusState.style.color = 'var(--yellow)';
+      el.dailyBtn.textContent = 'DAILY CLAIMED';
+    }
+  }
+
+  function formatRemaining(ms) {
+    const total = Math.max(0, Math.floor(ms / 1000));
+    const h = String(Math.floor(total / 3600)).padStart(2, '0');
+    const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
+    const s = String(total % 60).padStart(2, '0');
+    return `NEXT: ${h}:${m}:${s}`;
+  }
+
+  function refreshHeader() {
+    const store = ensureShared();
+    el.walletAmount.textContent = formatMoney(store.money);
+    el.liveStatus.textContent = store.sessionId ? `LIVE SESSION: ${store.sessionId}` : 'WAITING FOR TERMINAL';
+    el.syncState.textContent = 'LIVE';
+    el.syncState.style.color = '';
+    updateDailyAvailability();
+  }
+
+  function autofillSession() {
+    const store = readShared();
+    if (!store || !store.sessionId) {
+      toast('NO LIVE TERMINAL');
+      flashApp();
+      return;
+    }
+    el.sessionInput.value = store.sessionId;
+    state.selectedSessionId = store.sessionId;
+    toast('SESSION FILLED');
     flashApp();
-    return;
   }
-  sessionInput.value = s.sessionId;
-  selectedSessionId = s.sessionId;
-  toast('SESSION FILLED');
-  flashApp();
-}
 
-function animateReveal(password) {
-  clearInterval(revealTimer);
-  const chars = '0123456789';
-  let frame = 0;
-  const totalFrames = 18;
+  function animateReveal(password) {
+    clearInterval(state.revealTimer);
+    const chars = '0123456789';
+    let frame = 0;
+    const totalFrames = 18;
 
-  resultPassword.classList.remove('locked');
-  resultPassword.textContent = '????';
+    state.currentReveal = password;
+    el.resultPassword.classList.remove('locked');
+    el.resultPassword.textContent = '????';
 
-  revealTimer = setInterval(() => {
-    frame++;
-    if (frame >= totalFrames) {
-      clearInterval(revealTimer);
-      resultPassword.textContent = password;
-      resultPassword.classList.remove('locked');
-      flashApp(180);
+    state.revealTimer = setInterval(() => {
+      frame++;
+
+      if (frame >= totalFrames) {
+        clearInterval(state.revealTimer);
+        state.revealTimer = null;
+        el.resultPassword.textContent = password;
+        el.resultPassword.classList.remove('locked');
+        flashApp(180);
+        return;
+      }
+
+      el.resultPassword.textContent = password.split('').map((ch, i) => {
+        const threshold = Math.floor(totalFrames * ((i + 1) / 4));
+        return frame > threshold ? ch : chars[Math.floor(Math.random() * chars.length)];
+      }).join('');
+    }, 48);
+  }
+
+  function showResult({ sessionId, statusType, statusMsg, password, cost, verifiedText }) {
+    el.resultPlaceholder.style.display = 'none';
+    el.resultContent.style.display = 'block';
+
+    el.resultSessionChip.innerHTML = `SESSION › <b>${sessionId}</b>`;
+    el.resultAlgo.textContent = 'ALGO: ((sessionId × 31) + 7) % 9999';
+
+    if (cost != null) {
+      el.resultCost.textContent = `Cost deducted: -${formatMoney(cost)}  //  New balance: ${formatMoney(getMoney())}`;
+    } else {
+      el.resultCost.textContent = '';
+    }
+
+    el.resultCopy.textContent = password ? 'Click the password to copy it.' : '';
+    el.resultStatus.className = 'status ' + statusType;
+    el.resultStatus.textContent = verifiedText ? `${statusMsg} ${verifiedText}` : statusMsg;
+
+    if (password) {
+      animateReveal(password);
+    } else {
+      clearInterval(state.revealTimer);
+      state.revealTimer = null;
+      state.currentReveal = null;
+      el.resultPassword.classList.add('locked');
+      el.resultPassword.textContent = '????';
+    }
+  }
+
+  function pushHistory(entry) {
+    const d = loadCracker();
+    d.history = Array.isArray(d.history) ? d.history : [];
+    d.history.unshift(entry);
+    d.history = d.history.slice(0, HISTORY_LIMIT);
+    saveCracker(d);
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const d = loadCracker();
+    const history = Array.isArray(d.history) ? d.history : [];
+
+    el.historyCount.textContent = `(${history.length})`;
+
+    el.historyList.innerHTML = '';
+    if (!history.length) {
+      el.historyEmpty.style.display = 'block';
+      el.historyList.appendChild(el.historyEmpty);
       return;
     }
 
-    const shown = password.split('').map((ch, i) => {
-      const lockThreshold = Math.floor(totalFrames * ((i + 1) / 4));
-      return frame > lockThreshold ? ch : chars[Math.floor(Math.random() * chars.length)];
-    }).join('');
+    el.historyEmpty.style.display = 'none';
 
-    resultPassword.textContent = shown;
-  }, 48);
-}
+    const frag = document.createDocumentFragment();
 
-function showResult({ sessionId, statusType, statusMsg, password, cost, verifiedText }) {
-  resultPlaceholder.style.display = 'none';
-  resultContent.style.display = 'block';
+    for (const item of history) {
+      const row = document.createElement('div');
+      row.className = 'history-item';
 
-  resultSessionChip.innerHTML = `SESSION › <b>${sessionId}</b>`;
-  resultCost.textContent = cost ? `Cost deducted: -$${cost.toFixed(2)}  //  New balance: $${getMoney().toFixed(2)}` : '';
-  resultAlgo.textContent = 'ALGO: ((sessionId × 31) + 7) % 9999';
-  resultCopy.textContent = password ? 'Password copied automatically if you use the button below.' : '';
+      const session = document.createElement('div');
+      session.className = 'h-session';
+      session.textContent = String(item.sessionId ?? '----');
 
-  resultStatus.className = 'status ' + statusType;
-  resultStatus.textContent = verifiedText ? `${statusMsg} ${verifiedText}` : statusMsg;
+      const pass = document.createElement('div');
+      pass.className = 'h-pass';
+      pass.textContent = String(item.password ?? '????');
 
-  if (password) animateReveal(password);
-  else {
-    resultPassword.classList.add('locked');
-    resultPassword.textContent = '????';
-  }
-}
+      const time = document.createElement('div');
+      time.className = 'h-time';
+      const costText = Number.isFinite(Number(item.cost)) ? Number(item.cost).toFixed(2) : '0.00';
+      time.textContent = `${item.time || ''} · ${costText} · ${item.type || 'OFFLINE'}`;
 
-function pushHistory(entry) {
-  const d = loadCracker();
-  d.history.unshift(entry);
-  saveCracker(d);
-  renderHistory();
-}
-
-function renderHistory() {
-  const d = loadCracker();
-  const history = d.history || [];
-  historyCount.textContent = `(${history.length})`;
-
-  if (!history.length) {
-    historyEmpty.style.display = 'block';
-    historyList.innerHTML = '';
-    historyList.appendChild(historyEmpty);
-    return;
-  }
-
-  historyEmpty.style.display = 'none';
-  historyList.innerHTML = history.map(item => `
-    <div class="history-item">
-      <div class="h-session">${item.sessionId}</div>
-      <div class="h-pass">${item.password}</div>
-      <div class="h-time">${item.time} · ${item.cost.toFixed(2)} · ${item.type}</div>
-    </div>
-  `).join('');
-}
-
-function copyPassword(text) {
-  if (!text || text === '????') return;
-  navigator.clipboard?.writeText(text).then(() => {
-    toast('PASSWORD COPIED');
-  }).catch(() => {
-    toast('COPY FAILED');
-  });
-}
-
-function unlockTerminal() {
-  const rawId = parseInt(sessionInput.value, 10);
-
-  if (!rawId || rawId < 1000 || rawId > 9999) {
-    setOverlay(true);
-    setTimeout(() => setOverlay(false), 240);
-    showResult({
-      sessionId: '----',
-      statusType: 'err',
-      statusMsg: 'Invalid session ID. Use a 4-digit number.',
-      password: null,
-      cost: null
-    });
-    flashApp();
-    return;
-  }
-
-  const unlockCost = 50.00;
-  const money = getMoney();
-
-  if (money < unlockCost) {
-    setOverlay(true);
-    setTimeout(() => setOverlay(false), 240);
-    showResult({
-      sessionId: rawId,
-      statusType: 'err',
-      statusMsg: `Insufficient funds. Unlock cost is $${unlockCost.toFixed(2)}.`,
-      password: null,
-      cost: null
-    });
-    toast('NOT ENOUGH BALANCE');
-    return;
-  }
-
-  setOverlay(true);
-  unlockBtn.disabled = true;
-  autofillBtn.disabled = true;
-  dailyBtn.disabled = true;
-
-  setTimeout(() => {
-    setMoney(getMoney() - unlockCost);
-    updateWallet();
-
-    const password = derivePassword(rawId);
-    const live = loadShared();
-    const isLive = live && live.sessionId === rawId;
-
-    let statusMsg = 'Terminal unlocked.';
-    let statusType = 'ok';
-    let verifiedText = '';
-
-    if (isLive) {
-      verifiedText = 'Live session verified.';
-      statusMsg = 'Decoder matched the current active terminal.';
-    } else if (live && live.sessionId) {
-      verifiedText = `Live session is ${live.sessionId}.`;
-      statusMsg = 'Decoder completed for a non-live session.';
-      statusType = 'warn';
-    } else {
-      verifiedText = '';
-      statusMsg = 'Decoder completed.';
-      statusType = 'warn';
+      row.appendChild(session);
+      row.appendChild(pass);
+      row.appendChild(time);
+      frag.appendChild(row);
     }
 
-    showResult({
-      sessionId: rawId,
-      statusType,
-      statusMsg,
-      password,
-      cost: unlockCost,
-      verifiedText
-    });
+    el.historyList.appendChild(frag);
+  }
 
-    pushHistory({
-      sessionId: rawId,
-      password,
-      type: isLive ? 'LIVE' : 'OFFLINE',
-      cost: unlockCost,
-      time: new Date().toLocaleTimeString()
-    });
+  function copyPassword(text) {
+    if (!text || text === '????') return;
+    const maybePromise = navigator.clipboard?.writeText(text);
+    if (maybePromise && typeof maybePromise.then === 'function') {
+      maybePromise.then(() => toast('PASSWORD COPIED')).catch(() => toast('COPY FAILED'));
+    } else {
+      toast('COPY UNAVAILABLE');
+    }
+  }
 
-    toast('TERMINAL UNLOCKED');
-    flashApp(240);
+  function unlockTerminal() {
+    const rawId = parseInt(el.sessionInput.value, 10);
+
+    if (!rawId || rawId < 1000 || rawId > 9999) {
+      setOverlay(true);
+      setTimeout(() => setOverlay(false), 240);
+      showResult({
+        sessionId: '----',
+        statusType: 'err',
+        statusMsg: 'Invalid session ID. Use a 4-digit number.',
+        password: null,
+        cost: null,
+      });
+      flashApp();
+      return;
+    }
+
+    const money = getMoney();
+    if (money < UNLOCK_COST) {
+      setOverlay(true);
+      setTimeout(() => setOverlay(false), 240);
+      showResult({
+        sessionId: rawId,
+        statusType: 'err',
+        statusMsg: `Insufficient funds. Unlock cost is ${formatMoney(UNLOCK_COST)}.`,
+        password: null,
+        cost: null,
+      });
+      toast('NOT ENOUGH BALANCE');
+      return;
+    }
+
+    setOverlay(true);
+    el.unlockBtn.disabled = true;
+    el.autofillBtn.disabled = true;
+    el.dailyBtn.disabled = true;
 
     setTimeout(() => {
-      setOverlay(false);
-      unlockBtn.disabled = false;
-      autofillBtn.disabled = false;
+      setMoney(getMoney() - UNLOCK_COST);
+
+      const password = derivePassword(rawId);
+      const live = readShared();
+      const isLive = !!(live && live.sessionId === rawId);
+
+      let statusMsg = 'Terminal unlocked.';
+      let statusType = 'ok';
+      let verifiedText = '';
+
+      if (isLive) {
+        statusMsg = 'Decoder matched the current active terminal.';
+        verifiedText = 'Live session verified.';
+      } else if (live && live.sessionId) {
+        statusMsg = 'Decoder completed for a non-live session.';
+        verifiedText = `Live session is ${live.sessionId}.`;
+        statusType = 'warn';
+      } else {
+        statusMsg = 'Decoder completed.';
+        statusType = 'warn';
+      }
+
+      showResult({
+        sessionId: rawId,
+        statusType,
+        statusMsg,
+        password,
+        cost: UNLOCK_COST,
+        verifiedText,
+      });
+
+      pushHistory({
+        sessionId: rawId,
+        password,
+        type: isLive ? 'LIVE' : 'OFFLINE',
+        cost: UNLOCK_COST,
+        time: new Date().toLocaleTimeString(),
+      });
+
+      toast('TERMINAL UNLOCKED');
+      flashApp(240);
+
+      setTimeout(() => {
+        setOverlay(false);
+        el.unlockBtn.disabled = false;
+        el.autofillBtn.disabled = false;
+        updateDailyAvailability();
+      }, 780);
+    }, 220);
+  }
+
+  function claimDaily() {
+    const d = loadDailyState();
+    const now = Date.now();
+
+    if (now - (d.lastClaim || 0) < COOLDOWN_MS) {
+      toast('DAILY ALREADY CLAIMED');
       updateDailyAvailability();
-    }, 780);
-  }, 220);
-}
+      return;
+    }
 
-function claimDaily() {
-  const d = loadDailyState();
-  const now = Date.now();
-  const cooldown = 24 * 60 * 60 * 1000;
+    d.lastClaim = now;
+    saveDailyState(d);
 
-  if (now - (d.lastClaim || 0) < cooldown) {
-    toast('DAILY ALREADY CLAIMED');
+    updateShared((draft) => {
+      draft.money = round2(Number(draft.money || 0) + DAILY_REWARD);
+      return draft;
+    });
+
+    updateWallet();
     updateDailyAvailability();
-    return;
+    toast('DAILY +$50 CLAIMED');
+    flashApp(200);
+
+    setOverlay(true);
+    setTimeout(() => setOverlay(false), 160);
   }
 
-  d.lastClaim = now;
-  saveDailyState(d);
-
-  setMoney(getMoney() + 50);
-  updateWallet();
-  updateDailyAvailability();
-  toast('DAILY +$50 CLAIMED');
-  flashApp(200);
-
-  setOverlay(true);
-  setTimeout(() => setOverlay(false), 160);
-}
-
-document.getElementById('unlock-btn').addEventListener('click', unlockTerminal);
-document.getElementById('daily-btn').addEventListener('click', claimDaily);
-autofillBtn.addEventListener('click', autofillSession);
-sessionInput.addEventListener('input', () => { selectedSessionId = parseInt(sessionInput.value, 10) || null; });
-
-sessionInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') unlockTerminal();
-});
-
-document.addEventListener('keydown', (e) => {
-  if (e.ctrlKey && e.key.toLowerCase() === 'k') {
-    e.preventDefault();
-    autofillSession();
+  function handleCopyClick() {
+    const text = el.resultPassword.textContent.trim();
+    copyPassword(text);
   }
-});
 
-setInterval(() => {
+  function updateLiveStatusFromStorage() {
+    const store = readShared();
+    if (store && store.sessionId) {
+      el.liveStatus.textContent = `LIVE SESSION: ${store.sessionId}`;
+      el.syncState.textContent = 'LIVE';
+      el.syncState.style.color = '';
+    } else {
+      el.liveStatus.textContent = 'WAITING FOR TERMINAL';
+      el.syncState.textContent = 'OFFLINE';
+      el.syncState.style.color = 'var(--red)';
+    }
+  }
+
+  el.unlockBtn.addEventListener('click', unlockTerminal);
+  el.dailyBtn.addEventListener('click', claimDaily);
+  el.autofillBtn.addEventListener('click', autofillSession);
+
+  el.sessionInput.addEventListener('input', () => {
+    state.selectedSessionId = parseInt(el.sessionInput.value, 10) || null;
+  });
+
+  el.sessionInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') unlockTerminal();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      autofillSession();
+    }
+  });
+
+  if (el.resultPassword) {
+    el.resultPassword.style.cursor = 'pointer';
+    el.resultPassword.title = 'Click to copy password';
+    el.resultPassword.addEventListener('click', handleCopyClick);
+  }
+
+  window.addEventListener('storage', (e) => {
+    if (e.key === SHARED_KEY) {
+      refreshHeader();
+      renderHistory();
+      updateLiveStatusFromStorage();
+    }
+    if (e.key === DAILY_KEY) {
+      updateDailyAvailability();
+    }
+  });
+
+  state.syncTimer = setInterval(() => {
+    updateWallet();
+    renderHistory();
+    updateLiveStatusFromStorage();
+  }, 1500);
+
+  setInterval(updateClock, 1000);
+
+  ensureShared();
   updateWallet();
+  updateClock();
   renderHistory();
-}, 1500);
+  updateLiveStatusFromStorage();
 
-setInterval(updateClock, 1000);
-
-updateWallet();
-updateClock();
-renderHistory();
-
-const live = loadShared();
-if (live && live.sessionId) {
-  liveStatus.textContent = `LIVE SESSION: ${live.sessionId}`;
-} else {
-  liveStatus.textContent = 'WAITING FOR TERMINAL';
-}
+  const live = readShared();
+  if (live && live.sessionId) {
+    el.liveStatus.textContent = `LIVE SESSION: ${live.sessionId}`;
+  } else {
+    el.liveStatus.textContent = 'WAITING FOR TERMINAL';
+  }
+})();
 </script>
 </body>
 </html>
