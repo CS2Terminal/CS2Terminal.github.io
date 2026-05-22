@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS2 TERMINAL v4.1.2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --green:#00ff41; --dim:#00aa2a; --red:#ff3333;
+    --yellow:#ffcc00; --panel:#0d1a0f; --border:#1a3a1f; --text:#c8ffc8;
+  }
+  body {
+    background:#0a0a0a; color:var(--green);
+    font-family:'Share Tech Mono',monospace;
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+  body::before {
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:999;
+    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.15) 2px,rgba(0,0,0,0.15) 4px);
+  }
+  body::after {
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:998;
+    background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,0.7) 100%);
+  }
+  .terminal {
+    width:860px; max-width:98vw; background:var(--panel);
+    border:1px solid var(--border);
+    box-shadow:0 0 20px rgba(0,255,65,0.1),0 0 60px rgba(0,255,65,0.05),inset 0 0 30px rgba(0,0,0,0.5);
+    display:flex; flex-direction:column; height:92vh; overflow:hidden;
+  }
+  .title-bar {
+    background:#0a150b; border-bottom:1px solid var(--border);
+    padding:6px 14px; display:flex; align-items:center; gap:10px;
+    font-size:11px; color:var(--dim); letter-spacing:2px; text-transform:uppercase;
+  }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--dim); box-shadow:0 0 6px var(--green); animation:blink 2s infinite; }
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+  .title-bar-right { margin-left:auto; font-size:10px; opacity:0.5; }
+  .screen { flex:1; overflow-y:auto; padding:20px; scroll-behavior:smooth; }
+  .screen::-webkit-scrollbar{width:4px}
+  .screen::-webkit-scrollbar-thumb{background:var(--dim)}
+  .line { line-height:1.6; margin-bottom:2px; font-size:14px; animation:fadein 0.1s ease; }
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  .line.dim{color:var(--dim);font-size:12px}
+  .line.red{color:var(--red)}
+  .line.yellow{color:var(--yellow)}
+  .line.white{color:var(--text)}
+  .line.big{font-family:'VT323',monospace;font-size:22px;color:var(--green)}
+  .line.sep{color:#1e4a22}
+  .input-bar {
+    border-top:1px solid var(--border); padding:10px 14px;
+    display:flex; align-items:center; gap:8px; background:#08100a;
+  }
+  .prompt{color:var(--dim);font-size:13px;white-space:nowrap}
+  #cmd-input {
+    flex:1; background:transparent; border:none; outline:none;
+    color:var(--green); font-family:'Share Tech Mono',monospace; font-size:14px; caret-color:var(--green);
+  }
+  #cmd-input::placeholder{color:#1a4020}
+  .status-bar {
+    border-top:1px solid var(--border); padding:4px 14px;
+    display:flex; justify-content:space-between;
+    font-size:10px; color:#1e5c25; letter-spacing:1px; background:#08100a;
+  }
+  .money-display{color:var(--yellow)}
+  @keyframes glitch {
+    0%{transform:translate(0);filter:none}
+    10%{transform:translate(-4px,2px);filter:hue-rotate(90deg)}
+    20%{transform:translate(4px,-2px);filter:brightness(2)}
+    30%{transform:translate(-2px,4px);filter:hue-rotate(180deg)}
+    40%{transform:translate(2px,-4px);filter:none}
+    50%{transform:translate(-6px,0);filter:invert(0.3)}
+    60%{transform:translate(6px,2px);filter:hue-rotate(270deg)}
+    70%{transform:translate(0,-2px);filter:brightness(0.3)}
+    80%{transform:translate(-2px,2px);filter:none}
+    90%{transform:translate(2px,0);filter:hue-rotate(45deg)}
+    100%{transform:translate(0);filter:none}
+  }
+  .glitching{animation:glitch 0.1s infinite}
+  @keyframes fadeout{from{opacity:1}to{opacity:0}}
+  .dying{animation:fadeout 1.5s ease forwards}
+  .item-block {
+    border:1px solid #1a4a1f; padding:10px 14px; margin:8px 0;
+    background:rgba(0,40,10,0.3);
+  }
+  .item-name{color:var(--yellow);font-size:15px}
+  .item-rarity{font-size:11px;margin-bottom:4px}
+  .item-price{color:#00ff88;font-size:14px}
+  .item-float{color:#888;font-size:11px}
+  .rarity-consumer{color:#aaa}
+  .rarity-industrial{color:#6496e1}
+  .rarity-milspec{color:#4b69cd}
+  .rarity-restricted{color:#8847ff}
+  .rarity-classified{color:#d32ce6}
+  .rarity-covert{color:#eb4b4b}
+  .rarity-gold{color:#e4ae39}
+  .hint-box {
+    border:1px dashed #1a4020; padding:8px 12px; margin:6px 0;
+    font-size:12px; color:#2a7030;
+  }
+</style>
+</head>
+<body>
+<div class="terminal" id="terminal">
+  <div class="title-bar">
+    <div class="dot"></div>
+    <span>CS2 TRADE NETWORK // ENCRYPTED CHANNEL</span>
+    <span class="title-bar-right" id="session-display">SESSION: ----</span>
+  </div>
+  <div class="screen" id="screen"></div>
+  <div class="input-bar" id="input-bar">
+    <span class="prompt" id="prompt-label">PASS &gt;</span>
+    <input type="password" id="cmd-input" placeholder="enter access code..." autocomplete="off" autofocus />
+  </div>
+  <div class="status-bar">
+    <span>CONN: SECURE • ENC: AES-256 • ANON: ACTIVE</span>
+    <span>BALANCE: $<span class="money-display" id="money-display">0.00</span></span>
+  </div>
+</div>
+<script>
+// ═══════════════════════════════════════════════
+// SHARED STORAGE KEY: 'cs2_shared'
+// Structure: { sessionId, dead, money, inventory:[], prices:{} }
+// PASSWORD: ((sessionId * 31) + 7) % 9999, zero-padded 4 digits
+// ═══════════════════════════════════════════════
+
+const SHARED_KEY = 'cs2_shared';
+
+function derivePassword(sid) {
+  return String((sid * 31 + 7) % 9999).padStart(4,'0');
+}
+function newSessionId() {
+  return Math.floor(1000 + Math.random() * 8999);
+}
+
+// Always read fresh from storage
+function loadShared() {
+  try { return JSON.parse(localStorage.getItem(SHARED_KEY)) || null; }
+  catch(e) { return null; }
+}
+function saveShared(obj) {
+  localStorage.setItem(SHARED_KEY, JSON.stringify(obj));
+}
+function getMoney() {
+  const s = loadShared(); return s ? (s.money || 0) : 0;
+}
+function setMoney(v) {
+  const s = loadShared() || {};
+  s.money = Math.max(0, Math.round(v * 100) / 100);
+  saveShared(s);
+}
+function addToInventory(item) {
+  const s = loadShared() || {};
+  if (!s.inventory) s.inventory = [];
+  s.inventory.push({
+    ...item,
+    boughtAt: item.price,
+    acquiredTime: Date.now(),
+    id: Date.now() + Math.random()
+  });
+  saveShared(s);
+}
+
+// ── Base items (prices fluctuate in inventory.html) ──
+const BASE_ITEMS = [
+  { name:"AK-47 | Redline",             rarity:"classified", wear:"Field-Tested",  price:24.50,   float:"0.2341" },
+  { name:"AWP | Asiimov",               rarity:"covert",     wear:"Battle-Scarred",price:67.00,   float:"0.7812" },
+  { name:"M4A4 | Howl",                 rarity:"gold",       wear:"Minimal Wear",  price:1840.00, float:"0.1102" },
+  { name:"Karambit | Fade",             rarity:"gold",       wear:"Factory New",   price:2100.00, float:"0.0322" },
+  { name:"Desert Eagle | Blaze",        rarity:"classified", wear:"Factory New",   price:412.00,  float:"0.0071" },
+  { name:"Glock-18 | Fade",             rarity:"classified", wear:"Factory New",   price:380.00,  float:"0.0214" },
+  { name:"USP-S | Kill Confirmed",      rarity:"covert",     wear:"Minimal Wear",  price:88.00,   float:"0.0981" },
+  { name:"M4A1-S | Knight",             rarity:"covert",     wear:"Field-Tested",  price:156.00,  float:"0.3211" },
+  { name:"AK-47 | Fire Serpent",        rarity:"covert",     wear:"Well-Worn",     price:310.00,  float:"0.4422" },
+  { name:"Butterfly Knife | Tiger Tooth",rarity:"gold",      wear:"Factory New",   price:1250.00, float:"0.0099" },
+  { name:"FAMAS | Valence",             rarity:"milspec",    wear:"Minimal Wear",  price:3.20,    float:"0.1301" },
+  { name:"Five-SeveN | Monkey Business",rarity:"milspec",    wear:"Factory New",   price:6.80,    float:"0.0512" },
+  { name:"MAC-10 | Neon Rider",         rarity:"restricted", wear:"Minimal Wear",  price:14.00,   float:"0.1122" },
+  { name:"Stiletto Knife | Doppler",    rarity:"gold",       wear:"Factory New",   price:450.00,  float:"0.0233" },
+  { name:"P250 | See Ya Later",         rarity:"restricted", wear:"Field-Tested",  price:9.50,    float:"0.2801" },
+  { name:"AUG | Chameleon",             rarity:"milspec",    wear:"Factory New",   price:5.60,    float:"0.0712" },
+  { name:"SG 553 | Cyrex",              rarity:"restricted", wear:"Minimal Wear",  price:11.20,   float:"0.0933" },
+  { name:"M4A4 | Neo-Noir",             rarity:"covert",     wear:"Field-Tested",  price:42.00,   float:"0.2801" },
+];
+
+// Get current price with fluctuation applied
+function getCurrentPrice(itemName, basePrice) {
+  const s = loadShared();
+  if (s && s.prices && s.prices[itemName] !== undefined) {
+    return s.prices[itemName];
+  }
+  return basePrice;
+}
+
+function pickItem() {
+  const base = BASE_ITEMS[Math.floor(Math.random() * BASE_ITEMS.length)];
+  return { ...base, price: getCurrentPrice(base.name, base.price) };
+}
+
+// ── State ──
+let STATE = { phase:'login', rejects:0, currentItem:null, sessionId:null, correctPassword:null };
+
+function bootState() {
+  let s = loadShared();
+  if (!s) {
+    s = { sessionId:newSessionId(), dead:false, money:0, inventory:[], prices:{} };
+    saveShared(s);
+  }
+  STATE.sessionId = s.sessionId;
+  STATE.correctPassword = derivePassword(s.sessionId);
+  STATE.phase = s.dead ? 'dead_login' : 'login';
+}
+
+function markDead() {
+  const newSid = newSessionId();
+  const s = loadShared() || {};
+  s.sessionId = newSid;
+  s.dead = true;
+  // money persists across sessions!
+  saveShared(s);
+  STATE.sessionId = newSid;
+  STATE.correctPassword = derivePassword(newSid);
+}
+
+function markAlive() {
+  const s = loadShared() || {};
+  s.dead = false;
+  saveShared(s);
+}
+
+const VENDOR_NAMES = ["Aleksandr_V","ShadowBroker99","TradeKingRU","dark_merchant","xXSkinVaultXx"];
+let vendorName = '';
+const GREETINGS = [
+  "yo. heard you were looking. i got something.",
+  "bro you actually came. okay. listen up.",
+  "dont tell anyone about this channel. just between us.",
+  "finally. been waiting. got fresh stock in.",
+  "new stuff just landed. you got timing.",
+];
+const PITCH_INTROS = ["check this out:","got this right now:","fresh drop:","one-time offer:","just pulled this:","straight from a case:"];
+const REJECT_RESPONSES = [
+  "fine. your loss.","okay okay. but hear me out on the next one.",
+  "bro really? that price is steal.","whatever man. i got more.",
+  "lol okay. next one is better anyway.","you serious? alright.",
+  "not for everyone i guess.","fair. but youre missing out.",
+  "thats actually insane value but okay","ok i see you. selective buyer. i respect.",
+];
+const BUY_RESPONSES = [
+  "TRANSACTION CONFIRMED. sending now.",
+  "deal. encrypting transfer.",
+  "smart move. item is yours.",
+  "good call. i'll process it.",
+];
+
+// ── DOM ──
+const screen       = document.getElementById('screen');
+const input        = document.getElementById('cmd-input');
+const promptLabel  = document.getElementById('prompt-label');
+const moneyDisplay = document.getElementById('money-display');
+const sessionDisplay = document.getElementById('session-display');
+
+function updateMoneyDisplay() {
+  moneyDisplay.textContent = getMoney().toFixed(2);
+}
+
+function print(text, cls='', delay=0) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const div = document.createElement('div');
+      div.className = 'line' + (cls ? ' '+cls : '');
+      div.textContent = text;
+      screen.appendChild(div);
+      screen.scrollTop = screen.scrollHeight;
+      resolve();
+    }, delay);
+  });
+}
+
+function printItem(item) {
+  const block = document.createElement('div');
+  block.className = 'item-block';
+  block.innerHTML = `
+    <div class="item-name">◆ ${item.name}</div>
+    <div class="item-rarity rarity-${item.rarity}">[${item.rarity.toUpperCase()}] ${item.wear}</div>
+    <div class="item-float">Float: ${item.float}</div>
+    <div class="item-price">Price: $${item.price.toFixed(2)}</div>
+  `;
+  screen.appendChild(block);
+  screen.scrollTop = screen.scrollHeight;
+}
+
+function printHint(text) {
+  const div = document.createElement('div');
+  div.className = 'hint-box';
+  div.textContent = text;
+  screen.appendChild(div);
+  screen.scrollTop = screen.scrollHeight;
+}
+
+function printSep() { print('──────────────────────────────────────────────────────','sep'); }
+
+async function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+// ── Screens ──
+async function showLoginScreen(fresh=false) {
+  screen.innerHTML = '';
+  input.type = 'password';
+  promptLabel.textContent = 'PASS >';
+  input.placeholder = 'enter access code...';
+  sessionDisplay.textContent = `SESSION: ${STATE.sessionId}`;
+  updateMoneyDisplay();
+
+  await print('','dim');
+  await print('  ██████╗███████╗██████╗     ████████╗███████╗██████╗ ███╗   ███╗','big');
+  await print('  ██╔════╝██╔════╝╚════██╗    ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║','big');
+  await print('  ██║     ███████╗ █████╔╝       ██║   █████╗  ██████╔╝██╔████╔██║','big');
+  await print('  ██║     ╚════██║██╔═══╝        ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║','big');
+  await print('  ╚██████╗███████║███████╗       ██║   ███████╗██║  ██║██║ ╚═╝ ██║','big');
+  await print('   ╚═════╝╚══════╝╚══════╝       ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝','big');
+  await print('');
+  await print('  TRADE NETWORK CLIENT v4.1.2 // UNAUTHORIZED ACCESS PROHIBITED','dim');
+  await print('');
+  printSep();
+  await print(`  SESSION ID : ${STATE.sessionId}`, 'dim');
+  await print('  STATUS     : AWAITING AUTHENTICATION','dim');
+  printSep();
+  await print('');
+  await print('  Enter your 4-digit access code to continue.','white');
+  await print('');
+  if (fresh) { await print('  [!] New session generated. Previous credentials invalidated.','red'); await print(''); }
+  input.value = ''; input.focus();
+  STATE.phase = 'login';
+}
+
+async function showDeadLogin() {
+  screen.innerHTML = '';
+  input.type = 'password';
+  promptLabel.textContent = 'PASS >';
+  input.placeholder = 'enter access code...';
+  sessionDisplay.textContent = `SESSION: ${STATE.sessionId}`;
+  updateMoneyDisplay();
+
+  await print('');
+  await print('  ████████╗███████╗██████╗ ███╗   ███╗██╗███╗   ██╗ █████╗ ██╗     ','red');
+  await print('  ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║██║████╗  ██║██╔══██╗██║     ','red');
+  await print('     ██║   █████╗  ██████╔╝██╔████╔██║██║██╔██╗ ██║███████║██║     ','red');
+  await print('     ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║██║██║╚██╗██║██╔══██║██║     ','red');
+  await print('     ██║   ███████╗██║  ██║██║ ╚═╝ ██║██║██║ ╚████║██║  ██║███████╗','red');
+  await print('     ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝','red');
+  await print('');
+  printSep();
+  await print('  PREVIOUS SESSION TERMINATED','red');
+  await print('  ALL CREDENTIALS ROTATED','red');
+  printSep();
+  await print('');
+  await print(`  NEW SESSION ID : ${STATE.sessionId}`,'yellow');
+  await print('  Enter new access code to reconnect.','white');
+  await print('');
+  input.value = ''; input.focus();
+  STATE.phase = 'dead_login';
+}
+
+async function startChat() {
+  STATE.phase = 'chat';
+  STATE.rejects = 0;
+  markAlive();
+  vendorName = VENDOR_NAMES[Math.floor(Math.random()*VENDOR_NAMES.length)];
+  input.type = 'text';
+  promptLabel.textContent = '> ';
+  input.placeholder = 'buy / pass';
+  screen.innerHTML = '';
+  printSep();
+  await print('  AUTHENTICATION SUCCESSFUL','dim');
+  await print('  SECURE CHANNEL ESTABLISHED','dim');
+  printSep();
+  await print('');
+  await sleep(400);
+  await print(`[${vendorName}]: ${GREETINGS[Math.floor(Math.random()*GREETINGS.length)]}`,'white');
+  await sleep(600);
+  printHint('COMMANDS: "buy" to purchase  |  "pass" to reject (+20% of item price)');
+  await print('');
+  await offerItem();
+}
+
+async function offerItem() {
+  if (STATE.phase !== 'chat') return;
+  const item = pickItem();
+  STATE.currentItem = item;
+  await sleep(500);
+  await print(`[${vendorName}]: ${PITCH_INTROS[Math.floor(Math.random()*PITCH_INTROS.length)]}`,'white');
+  await sleep(200);
+  printItem(item);
+  await sleep(200);
+  await print(`[${vendorName}]: legit price. you want it?`,'white');
+  updateMoneyDisplay();
+}
+
+async function handleReject() {
+  const bonus = STATE.currentItem.price * 0.2;
+  const newMoney = getMoney() + bonus;
+  setMoney(newMoney);
+  STATE.rejects++;
+  updateMoneyDisplay();
+  const resp = REJECT_RESPONSES[Math.min(STATE.rejects-1, REJECT_RESPONSES.length-1)];
+  await print(`[${vendorName}]: ${resp}`,'dim');
+  await print(`  [SYS] Time wasted +$${bonus.toFixed(2)} credited — balance: $${newMoney.toFixed(2)}`,'dim');
+  await print('');
+  if (STATE.rejects >= 10) {
+    await triggerCrash('EXCESSIVE REJECTIONS DETECTED');
+  } else {
+    await offerItem();
+  }
+}
+
+async function handleBuy() {
+  // Save item to inventory BEFORE crashing
+  addToInventory(STATE.currentItem);
+  const resp = BUY_RESPONSES[Math.floor(Math.random()*BUY_RESPONSES.length)];
+  await print(`[${vendorName}]: ${resp}`,'yellow');
+  await sleep(300);
+  await print('  [SYS] Transfer initiated... item secured to your vault...','dim');
+  await sleep(300);
+  await print(`  [SYS] ${STATE.currentItem.name} → INVENTORY`,'yellow');
+  await sleep(400);
+  await triggerCrash('TRANSACTION ANOMALY — HONEYPOT DETECTED');
+}
+
+async function triggerCrash(reason) {
+  STATE.phase = 'dead';
+  input.disabled = true;
+  await sleep(200);
+  printSep();
+  await print(`  [!] ${reason}`,'red');
+  await sleep(300);
+  await print('  [!] INITIATING SECURE WIPE PROTOCOL','red');
+  await sleep(200);
+  await print('  [!] CHANNEL COMPROMISED','red');
+  const terminal = document.getElementById('terminal');
+  await sleep(300);
+  terminal.classList.add('glitching'); await sleep(600); terminal.classList.remove('glitching');
+  await sleep(100);
+  terminal.classList.add('glitching'); await sleep(400); terminal.classList.remove('glitching');
+  const garbage = ['ERR_MEMORY_FAULT_0x8F3A','STACK OVERFLOW AT 0xDEADBEEF','NULL PTR EXCEPTION','DISK WIPE: 23%','DISK WIPE: 61%','DISK WIPE: 99%','>> KEYS ROTATED <<','BYE.'];
+  for (const g of garbage) { await print(`  ${g}`,'red'); await sleep(120); }
+  terminal.classList.add('glitching'); await sleep(800); terminal.classList.remove('glitching');
+  terminal.classList.add('dying'); await sleep(1500);
+  markDead();
+  STATE.rejects = 0; STATE.currentItem = null;
+  terminal.classList.remove('dying'); terminal.style.opacity = 1;
+  input.disabled = false;
+  await showDeadLogin();
+}
+
+input.addEventListener('keydown', async (e) => {
+  if (e.key !== 'Enter') return;
+  const val = input.value.trim(); input.value = '';
+  if (STATE.phase === 'login' || STATE.phase === 'dead_login') {
+    if (val === STATE.correctPassword) { await startChat(); }
+    else { await print('  ACCESS DENIED. Incorrect code.','red'); await print(''); }
+    return;
+  }
+  if (STATE.phase === 'chat') {
+    const cmd = val.toLowerCase();
+    if (cmd === 'buy') { await handleBuy(); }
+    else if (cmd === 'pass' || cmd === 'reject' || cmd === 'no' || cmd === 'skip') { await handleReject(); }
+    else if (cmd !== '') { await print('  [SYS] Unknown command. Use "buy" or "pass".','dim'); }
+  }
+});
+
+// Poll localStorage for money updates from cracker (every 1s)
+setInterval(updateMoneyDisplay, 1000);
+
+bootState();
+if (STATE.phase === 'dead_login') { showDeadLogin(); } else { showLoginScreen(); }
+</script>
+</body>
+</html>
