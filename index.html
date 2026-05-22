@@ -1,1449 +1,1158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CS2 TERMINAL v4.1.2</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS2 TRADE VAULT</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;700&family=Share+Tech+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --g:#00ff41;--dim:#00aa2a;--red:#ff3333;--yel:#ffcc00;--org:#ff8800;
+  --bg:#060c07;--panel:#070f08;--brd:#0d2410;--text:#b8ffb8;
+  --c-consumer:#aaaaaa;--c-industrial:#6496e1;--c-milspec:#4b69cd;
+  --c-restricted:#8847ff;--c-classified:#d32ce6;--c-covert:#eb4b4b;--c-gold:#e4ae39;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--g);font-family:'Share Tech Mono',monospace;font-size:13px}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.13) 2px,rgba(0,0,0,0.13) 4px);pointer-events:none;z-index:9999}
+body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.65) 100%);pointer-events:none;z-index:9998}
+/* ── Layout ── */
+#app{display:flex;flex-direction:column;height:100vh}
+.titlebar{background:#030a04;border-bottom:1px solid var(--brd);padding:5px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.titlebar-dot{width:7px;height:7px;border-radius:50%;background:var(--dim);box-shadow:0 0 5px var(--g);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.25}}
+.titlebar-name{font-size:11px;letter-spacing:3px;color:var(--dim);text-transform:uppercase}
+.titlebar-right{margin-left:auto;font-size:9px;color:#1a4020}
+.tabbar{background:#040b05;border-bottom:1px solid var(--brd);display:flex;flex-shrink:0}
+.tab-btn{padding:9px 20px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#1a5020;background:none;border:none;border-right:1px solid var(--brd);cursor:pointer;transition:color .15s,background .15s;outline:none}
+.tab-btn:hover{color:var(--dim);background:rgba(0,255,65,0.03)}
+.tab-btn.active{color:var(--g);background:rgba(0,255,65,0.06);border-bottom:1px solid var(--g)}
+.tab-btn .badge{display:inline-block;background:#0a2a10;color:var(--dim);font-size:9px;padding:0 4px;margin-left:5px;border-radius:2px}
+.content-area{flex:1;overflow:hidden;position:relative}
+.tab-pane{position:absolute;inset:0;overflow-y:auto;display:none;scrollbar-width:thin;scrollbar-color:var(--dim) transparent}
+.tab-pane.active{display:flex;flex-direction:column}
+/* Terminal pane special */
+#pane-terminal{overflow:hidden}
+.terminal-output{flex:1;overflow-y:auto;padding:18px;scrollbar-width:thin;scrollbar-color:var(--dim) transparent}
+.terminal-input-bar{border-top:1px solid var(--brd);padding:9px 14px;display:flex;align-items:center;gap:8px;background:#030a04;flex-shrink:0}
+.t-prompt{color:var(--dim);white-space:nowrap;font-size:12px}
+#t-input{flex:1;background:transparent;border:none;outline:none;color:var(--g);font-family:'Share Tech Mono',monospace;font-size:13px;caret-color:var(--g)}
+#t-input::placeholder{color:#1a3a18}
+/* Status bar */
+.statusbar{background:#030a04;border-top:1px solid var(--brd);padding:4px 14px;display:flex;justify-content:space-between;font-size:9px;color:#1a4020;letter-spacing:1px;flex-shrink:0}
+.statusbar .live{color:var(--dim)}
+/* ── Terminal lines ── */
+.ln{line-height:1.65;margin-bottom:1px;animation:fi .08s ease}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+.ln.dim{color:var(--dim);font-size:11px}.ln.red{color:var(--red)}.ln.yel{color:var(--yel)}.ln.whi{color:var(--text)}
+.ln.big{font-family:'VT323',monospace;font-size:20px}.ln.sep{color:#1a3a1a}
+.item-block{border:1px solid #112a14;padding:9px 12px;margin:6px 0;background:rgba(0,30,8,0.4)}
+.ib-name{color:var(--yel);font-size:14px}.ib-rar{font-size:10px;margin-bottom:3px}.ib-float{color:#555;font-size:10px}.ib-price{color:#00ff88;font-size:13px}
+.hint-box{border:1px dashed #112a14;padding:7px 11px;margin:5px 0;font-size:11px;color:#256a28}
+/* ── Generic page ── */
+.page{padding:18px;flex:1}
+.page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.section-title{font-size:10px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;border-left:2px solid var(--dim);padding-left:7px}
+/* ── Wallet strip ── */
+.wallet-strip{background:#040c06;border:1px solid var(--brd);padding:11px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.w-bal{font-family:'VT323',monospace;font-size:34px;color:var(--yel);line-height:1}
+.w-label{font-size:9px;color:var(--dim);letter-spacing:2px}
+.w-sub{font-size:9px;color:#1a4020;margin-top:2px}
+/* ── Daily claim ── */
+.daily-banner{background:rgba(0,60,15,0.5);border:1px solid #1a5a20;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.daily-banner .msg{font-size:11px;color:var(--g)}
+.btn{border:1px solid var(--dim);background:#030d06;color:var(--g);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;padding:7px 14px;cursor:pointer;transition:background .15s;outline:none;white-space:nowrap}
+.btn:hover{background:#0a2a10}
+.btn:active{background:#0f4018}
+.btn:disabled{border-color:#1a3a18;color:#1a3a18;cursor:not-allowed;background:transparent}
+.btn.green{border-color:#22aa55;color:#00ff88}
+.btn.green:hover{background:#052010}
+.btn.red{border-color:#aa2222;color:var(--red)}
+.btn.red:hover{background:#1a0505}
+.btn.yel{border-color:#aa8800;color:var(--yel)}
+.btn.yel:hover{background:#1a1000}
+/* ── Stats row ── */
+.stats-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.stat-box{border:1px solid var(--brd);background:#040c06;padding:9px 14px;flex:1;min-width:120px}
+.stat-box .lbl{font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase}
+.stat-box .val{font-family:'VT323',monospace;font-size:26px;color:var(--g);line-height:1.1}
+.stat-box .val.yel{color:var(--yel)}.stat-box .val.up{color:#00ff88}.stat-box .val.dn{color:var(--red)}
+/* ── Item grid ── */
+.item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:9px;margin-bottom:20px}
+.item-card{border:1px solid var(--brd);background:rgba(0,18,5,0.5);padding:11px;position:relative;transition:border-color .2s,background .2s}
+.item-card:hover{border-color:var(--dim);background:rgba(0,28,8,0.6)}
+.rarity-bar{position:absolute;top:0;left:0;right:0;height:2px}
+.ic-name{font-size:12px;color:var(--yel);margin-top:6px;margin-bottom:3px;line-height:1.3}
+.ic-wear{font-size:10px;color:var(--dim);margin-bottom:2px}
+.ic-float{font-size:9px;color:#1e4020;margin-bottom:7px}
+.ic-prices{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:8px}
+.ic-cur{font-family:'VT323',monospace;font-size:20px;color:var(--g);line-height:1}
+.ic-paid{font-size:9px;color:#1e4020}
+.ic-delta{font-size:10px;font-family:'VT323',monospace}
+.ic-delta.up{color:#00ff88}.ic-delta.dn{color:var(--red)}.ic-delta.flat{color:#1a4020}
+.ic-sdelta{font-size:9px;margin-bottom:6px}
+.ic-sdelta.up{color:#00ff88}.ic-sdelta.dn{color:var(--red)}
+.empty-grid{grid-column:1/-1;text-align:center;padding:50px 20px;color:#1a3a18}
+.empty-grid .big{font-family:'VT323',monospace;font-size:42px;display:block;margin-bottom:8px;color:#091a0a}
+/* ── Market table ── */
+.ticker-wrap{overflow:hidden;border:1px solid var(--brd);background:#030a04;padding:5px 0;margin-bottom:14px}
+.ticker-inner{display:flex;gap:36px;white-space:nowrap;animation:tick-scroll 60s linear infinite}
+@keyframes tick-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.tick-item{font-size:11px;display:inline-flex;gap:7px}
+.tick-n{color:var(--dim)}.tick-p{font-family:'VT323',monospace;font-size:15px;color:var(--g)}
+.tick-d.up{color:#00ff88}.tick-d.dn{color:var(--red)}.tick-d.flat{color:#1a4020}
+.mkt-table{width:100%;border-collapse:collapse}
+.mkt-table th{text-align:left;padding:5px 10px;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;border-bottom:1px solid var(--brd)}
+.mkt-table td{padding:6px 10px;border-bottom:1px solid #081208}
+.mkt-table tr:last-child td{border-bottom:none}
+.mkt-table tr:hover td{background:rgba(0,255,65,0.02)}
+.td-n{color:var(--yel)}.td-p{font-family:'VT323',monospace;font-size:17px;color:var(--g)}
+.td-b{color:#1e4020;font-size:10px}.td-d.up{color:#00ff88}.td-d.dn{color:var(--red)}.td-d.flat{color:#1a4020}
+/* ── Keygen ── */
+.kg-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.kg-card{border:1px solid var(--brd);padding:14px;background:rgba(0,18,5,0.5);transition:border-color .15s}
+.kg-card:hover{border-color:var(--dim)}
+.kg-card .kc-name{font-size:10px;color:var(--yel);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+.kg-card .kc-price{font-family:'VT323',monospace;font-size:32px;color:var(--g);line-height:1.1}
+.kg-card .kc-odds{font-size:10px;color:var(--dim);margin:4px 0 10px}
+.input-row{display:flex;gap:8px;margin-bottom:14px}
+.input-wrap{flex:1;border:1px solid var(--brd);background:#030a04;padding:9px 12px;display:flex;align-items:center;gap:7px}
+.input-wrap label{font-size:10px;color:var(--dim);white-space:nowrap}
+.input-wrap input{flex:1;background:transparent;border:none;outline:none;color:var(--g);font-family:'Share Tech Mono',monospace;font-size:14px;caret-color:var(--g)}
+.input-wrap input::placeholder{color:#1a3a18}
+.result-box{border:1px solid var(--brd);background:rgba(0,20,6,0.4);padding:14px 16px;margin-bottom:16px;min-height:72px}
+.rb-session{font-size:10px;color:var(--dim);margin-bottom:4px}
+.rb-pass{font-family:'VT323',monospace;font-size:48px;color:var(--g);letter-spacing:8px;line-height:1;text-shadow:0 0 18px rgba(0,255,65,0.35)}
+.rb-pass.locked{filter:blur(5px);color:#004410}
+.rb-cost{font-size:10px;color:var(--dim);margin-top:5px}
+.rb-status{font-size:11px;margin-top:6px}
+.rb-status.ok{color:#00ff88}.rb-status.err{color:var(--red)}.rb-status.warn{color:var(--yel)}
+.rb-placeholder{color:#1a3a18;font-size:11px}
+.hist-table{width:100%;border-collapse:collapse;font-size:11px}
+.hist-table th{text-align:left;padding:4px 9px;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;border-bottom:1px solid var(--brd)}
+.hist-table td{padding:5px 9px;border-bottom:1px solid #071407}
+.hist-table tr:last-child td{border-bottom:none}
+.ht-pass{font-family:'VT323',monospace;font-size:20px;color:var(--g);letter-spacing:3px}
+.ht-cost{color:var(--yel)}.ht-sid{color:var(--dim)}.ht-time{color:#1a3a18;font-size:10px}
+/* ── Glitch ── */
+@keyframes glitch{0%{transform:translate(0);filter:none}15%{transform:translate(-3px,1px);filter:hue-rotate(90deg)}30%{transform:translate(3px,-1px);filter:brightness(2)}45%{transform:translate(-2px,2px);filter:none}60%{transform:translate(2px,0);filter:hue-rotate(180deg)}75%{transform:translate(0,-1px);filter:brightness(0.4)}90%{transform:translate(-1px,1px);filter:none}100%{transform:translate(0);filter:none}}
+.glitching{animation:glitch .08s infinite}
+@keyframes fadeout{from{opacity:1}to{opacity:0}}
+.dying{animation:fadeout 1.4s ease forwards}
+/* rarity classes */
+.rc-consumer{background:var(--c-consumer)}.rc-industrial{background:var(--c-industrial)}.rc-milspec{background:var(--c-milspec)}
+.rc-restricted{background:var(--c-restricted)}.rc-classified{background:var(--c-classified)}.rc-covert{background:var(--c-covert)}.rc-gold{background:var(--c-gold)}
+.txt-consumer{color:var(--c-consumer)}.txt-industrial{color:var(--c-industrial)}.txt-milspec{color:var(--c-milspec)}
+.txt-restricted{color:var(--c-restricted)}.txt-classified{color:var(--c-classified)}.txt-covert{color:var(--c-covert)}.txt-gold{color:var(--c-gold)}
+/* misc */
+.sep-line{border:none;border-top:1px solid var(--brd);margin:14px 0}
+.price-sync-note{font-size:9px;color:#1a4020;text-align:right;margin-bottom:6px}
+
+#vhsOverlay{position:fixed;inset:0;background:#7f7f7f;z-index:999999;
+opacity:0;pointer-events:none;transition:opacity 1.5s ease;overflow:hidden;}
+#vhsOverlay.active{opacity:1;}
+.noise{position:absolute;inset:0;opacity:.25;
+background:repeating-radial-gradient(circle at center,
+rgba(255,255,255,.15)0px,
+rgba(255,255,255,0)3px,
+rgba(0,0,0,.1)6px);
+animation:noiseMove .08s infinite linear;}
+.scanlines{position:absolute;inset:0;
+background:repeating-linear-gradient(to bottom,
+transparent 0px,transparent 2px,
+rgba(0,0,0,.12)3px,rgba(0,0,0,.12)4px);}
+.vhsText{position:absolute;top:50%;left:50%;
+transform:translate(-50%,-50%);
+font-family:monospace;font-size:42px;letter-spacing:8px;
+color:white;text-shadow:2px 0 red,-2px 0 cyan;
+animation:flicker .15s infinite;}
+@keyframes noiseMove{from{transform:translateY(0)}to{transform:translateY(15px)}}
+@keyframes flicker{0%{opacity:1}50%{opacity:.6}100%{opacity:1}}
+
+
+.glitchPhase .noise{animation:noiseMove .04s infinite linear;opacity:.55;}
+.glitchPhase{animation:screenBreak .2s infinite;}
+.glitchPhase::before{
+content:"";
+position:absolute;
+inset:0;
+background:repeating-linear-gradient(
+90deg,
+transparent 0px,
+transparent 40px,
+rgba(255,255,255,.4) 60px,
+transparent 90px
+);
+mix-blend-mode:overlay;
+animation:fragmentShift .18s infinite;
+}
+@keyframes fragmentShift{
+0%{transform:translateX(0) translateY(0)}
+25%{transform:translateX(-40px) translateY(8px)}
+50%{transform:translateX(50px) translateY(-10px)}
+75%{transform:translateX(-20px) translateY(4px)}
+100%{transform:translateX(0) translateY(0)}
+}
+@keyframes screenBreak{
+0%{filter:none}
+25%{filter:blur(2px)}
+50%{filter:contrast(2)}
+75%{filter:hue-rotate(20deg)}
+100%{filter:none}
+}
 
-  :root {
-    --bg: #050607;
-    --panel: rgba(10, 17, 20, 0.92);
-    --panel-2: rgba(7, 12, 15, 0.92);
-    --line: rgba(255,255,255,0.07);
-    --line-strong: rgba(0, 255, 128, 0.16);
-    --green: #4dff9a;
-    --green-dim: #1e8c53;
-    --green-deep: #0f5d36;
-    --red: #ff4f5d;
-    --yellow: #ffd56a;
-    --text: #d7f2e0;
-    --muted: #8a9d95;
-    --blue: #6ea8ff;
-    --shadow: 0 0 40px rgba(0,255,140,.08), inset 0 0 30px rgba(0,0,0,.55);
-  }
-
-  * { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; }
-  body {
-    background:
-      radial-gradient(circle at 50% 45%, rgba(27, 49, 40, 0.35), transparent 36%),
-      radial-gradient(circle at 50% 50%, rgba(0, 255, 140, 0.08), transparent 70%),
-      linear-gradient(180deg, #050607 0%, #060809 100%);
-    color: var(--green);
-    font-family: 'Share Tech Mono', monospace;
-    overflow: hidden;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 30;
-    background: repeating-linear-gradient(
-      0deg,
-      rgba(255,255,255,0.02) 0,
-      rgba(255,255,255,0.02) 1px,
-      rgba(0,0,0,0.00) 3px,
-      rgba(0,0,0,0.00) 4px
-    );
-    mix-blend-mode: screen;
-  }
-
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 31;
-    background: radial-gradient(ellipse at center, transparent 48%, rgba(0,0,0,0.70) 100%);
-  }
-
-  .shell {
-    width: min(1120px, 98vw);
-    height: min(92vh, 980px);
-    margin: auto;
-    position: relative;
-    top: 4vh;
-    border: 1px solid rgba(102, 255, 172, 0.18);
-    background: linear-gradient(180deg, rgba(7,11,13,0.98), rgba(4,6,8,0.98));
-    box-shadow: var(--shadow);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .topbar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 14px;
-    border-bottom: 1px solid var(--line);
-    background: linear-gradient(180deg, rgba(13,20,22,0.95), rgba(8,12,14,0.95));
-    color: var(--green-dim);
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-size: 11px;
-    user-select: none;
-  }
-
-  .topbar .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 8px var(--green);
-    animation: blink 2s infinite;
-    flex: 0 0 auto;
-  }
-
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.28} }
-
-  .topbar-title {
-    color: var(--text);
-    opacity: .92;
-  }
-
-  .topbar-right {
-    margin-left: auto;
-    display: flex;
-    gap: 14px;
-    align-items: center;
-    color: #6f8b7b;
-    white-space: nowrap;
-  }
-
-  .badge {
-    padding: 3px 8px;
-    border: 1px solid rgba(255,255,255,0.08);
-    background: rgba(255,255,255,0.03);
-    border-radius: 999px;
-    color: var(--yellow);
-  }
-
-  .workspace {
-    flex: 1;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: 1.18fr 0.82fr;
-    gap: 0;
-    background:
-      radial-gradient(circle at 70% 30%, rgba(0,255,140,0.03), transparent 18%),
-      linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.0));
-  }
-
-  .screen {
-    min-width: 0;
-    min-height: 0;
-    border-right: 1px solid var(--line);
-    display: flex;
-    flex-direction: column;
-    background: linear-gradient(180deg, rgba(6,10,12,0.84), rgba(4,6,8,0.95));
-  }
-
-  .screen-header {
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--line);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: rgba(255,255,255,0.02);
-    color: #85b39b;
-    letter-spacing: 1px;
-    font-size: 10px;
-    text-transform: uppercase;
-  }
-
-  .screen-body {
-    flex: 1;
-    min-height: 0;
-    padding: 18px 18px 12px;
-    overflow-y: auto;
-    scroll-behavior: smooth;
-  }
-
-  .screen-body::-webkit-scrollbar { width: 4px; }
-  .screen-body::-webkit-scrollbar-thumb { background: var(--green-deep); }
-
-  .right {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    min-height: 0;
-    background:
-      linear-gradient(180deg, rgba(8,11,14,0.95), rgba(5,7,8,0.98));
-  }
-
-  .right-header {
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--line);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    font-size: 10px;
-    color: #88b4a0;
-    background: rgba(255,255,255,0.02);
-  }
-
-  .panel-scroll {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    padding: 16px 14px 18px;
-  }
-
-  .panel-scroll::-webkit-scrollbar { width: 4px; }
-  .panel-scroll::-webkit-scrollbar-thumb { background: var(--green-deep); }
-
-  .input-bar {
-    border-top: 1px solid var(--line);
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    padding: 10px 14px;
-    background: linear-gradient(180deg, rgba(6,10,10,0.98), rgba(4,7,7,0.98));
-  }
-
-  .prompt {
-    color: var(--green-dim);
-    font-size: 13px;
-    white-space: nowrap;
-    flex: 0 0 auto;
-  }
-
-  #cmd-input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: var(--green);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 14px;
-    caret-color: var(--green);
-  }
-
-  #cmd-input::placeholder { color: rgba(28, 119, 72, 0.58); }
-
-  .status-bar {
-    border-top: 1px solid var(--line);
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 5px 14px 6px;
-    background: #06100a;
-    color: #557364;
-    font-size: 10px;
-    letter-spacing: 1.1px;
-    text-transform: uppercase;
-    user-select: none;
-  }
-
-  .money-display { color: var(--yellow); }
-  .warn { color: var(--red); }
-  .dim { color: var(--green-dim); }
-  .white { color: var(--text); }
-  .yellow { color: var(--yellow); }
-  .red { color: var(--red); }
-  .blue { color: var(--blue); }
-
-  .line {
-    line-height: 1.6;
-    margin-bottom: 3px;
-    font-size: 14px;
-    animation: fadein .16s ease;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-
-  @keyframes fadein { from { opacity: 0; transform: translateY(1px); } to { opacity: 1; transform: translateY(0); } }
-
-  .line.small { font-size: 12px; }
-  .line.big {
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 700;
-    font-size: 24px;
-    letter-spacing: 4px;
-    color: var(--green);
-  }
-  .line.sep { color: rgba(72, 140, 98, 0.4); }
-
-  .hint-box {
-    margin: 8px 0 10px;
-    border: 1px dashed rgba(61, 148, 91, 0.42);
-    background: rgba(0, 255, 128, 0.03);
-    padding: 9px 11px;
-    color: #6dd19a;
-    font-size: 12px;
-  }
-
-  .offer-card {
-    border: 1px solid rgba(103, 255, 170, 0.17);
-    background:
-      linear-gradient(180deg, rgba(7,15,13,0.92), rgba(4,8,8,0.94)),
-      radial-gradient(circle at 50% 0%, rgba(0,255,140,0.12), transparent 55%);
-    padding: 14px;
-    box-shadow: inset 0 0 24px rgba(0,0,0,.35);
-  }
-
-  .offer-hero {
-    position: relative;
-    height: 210px;
-    border: 1px solid rgba(255,255,255,0.05);
-    overflow: hidden;
-    background:
-      radial-gradient(circle at 50% 40%, rgba(0,255,140,0.10), transparent 28%),
-      radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03), transparent 50%),
-      linear-gradient(180deg, #0b1f15, #091012 55%, #070b0c);
-  }
-
-  .offer-hero::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(circle at 50% 50%, transparent 0 34%, rgba(255,255,255,0.03) 34% 35%, transparent 35% 36%, rgba(255,255,255,0.02) 36% 37%, transparent 37% 100%);
-    opacity: .5;
-  }
-
-  .offer-card .ring {
-    position: absolute;
-    inset: 34px 30px auto 30px;
-    height: 140px;
-    border-radius: 50%;
-    border: 1px solid rgba(150,255,196,0.10);
-    box-shadow: 0 0 0 1px rgba(0,0,0,.25), inset 0 0 35px rgba(0,255,120,.05);
-  }
-
-  .offer-card .halo {
-    position: absolute;
-    inset: 60px 60px auto 60px;
-    height: 90px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(0,255,150,0.12), transparent 70%);
-    filter: blur(4px);
-  }
-
-  .offer-case {
-    position: absolute;
-    left: 50%;
-    top: 55%;
-    transform: translate(-50%, -50%);
-    width: 74%;
-    height: 74px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.12);
-    background:
-      linear-gradient(180deg, rgba(30,36,42,0.95), rgba(8,10,12,0.98));
-    box-shadow: 0 10px 18px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(0,255,160,0.08);
-  }
-
-  .offer-case::before {
-    content: '';
-    position: absolute;
-    inset: 7px;
-    border-radius: 6px;
-    border: 1px solid rgba(255,255,255,0.04);
-    background:
-      radial-gradient(circle at 50% 50%, rgba(0,255,140,0.12), transparent 18%),
-      linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.00));
-  }
-
-  .offer-logo {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 66px;
-    height: 66px;
-    border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.82);
-    color: rgba(255,255,255,0.90);
-    display: grid;
-    place-items: center;
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    font-size: 11px;
-    box-shadow: 0 0 20px rgba(255,255,255,0.08);
-  }
-
-  .offer-meta {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px 12px;
-    margin-top: 14px;
-    font-size: 12px;
-    color: #91b5a1;
-  }
-
-  .kv {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    padding-bottom: 4px;
-  }
-
-  .item-name {
-    margin-top: 10px;
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 700;
-    font-size: 18px;
-    letter-spacing: 0.6px;
-    color: var(--yellow);
-  }
-
-  .item-rarity {
-    margin-top: 4px;
-    font-size: 11px;
-    letter-spacing: 1.6px;
-    text-transform: uppercase;
-    opacity: .95;
-  }
-
-  .item-float, .item-wear {
-    margin-top: 5px;
-    color: #7a9490;
-    font-size: 11px;
-  }
-
-  .price {
-    margin-top: 8px;
-    font-size: 17px;
-    color: #82ffb5;
-  }
-
-  .right-actions {
-    display: grid;
-    gap: 8px;
-    grid-template-columns: 1fr 1fr;
-    margin-top: 12px;
-  }
-
-  button.action {
-    border: 1px solid rgba(255,255,255,0.09);
-    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
-    color: var(--text);
-    font-family: inherit;
-    font-size: 12px;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    padding: 10px 12px;
-    cursor: pointer;
-    transition: transform .08s ease, border-color .12s ease, background .12s ease;
-  }
-
-  button.action:hover {
-    transform: translateY(-1px);
-    border-color: rgba(77,255,154,0.35);
-    background: linear-gradient(180deg, rgba(77,255,154,0.11), rgba(255,255,255,0.03));
-  }
-
-  button.action.buy {
-    color: #dfffee;
-    border-color: rgba(77,255,154,0.28);
-  }
-
-  button.action.pass {
-    color: #ffefd1;
-    border-color: rgba(255,213,106,0.18);
-  }
-
-  .chat-log {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .bubble {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    max-width: 100%;
-  }
-
-  .avatar {
-    width: 22px;
-    height: 22px;
-    flex: 0 0 22px;
-    border-radius: 4px;
-    border: 1px solid rgba(255,255,255,0.10);
-    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
-    display: grid;
-    place-items: center;
-    color: #86b99a;
-    font-size: 11px;
-  }
-
-  .bubble .text {
-    flex: 1;
-    min-width: 0;
-    padding: 7px 9px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.05);
-    color: #cde9d5;
-    line-height: 1.45;
-    font-size: 13px;
-  }
-
-  .bubble.system .text { color: #89cba1; }
-  .bubble.vendor .text { color: #e5f5ea; }
-  .bubble.warn .text { color: var(--red); }
-
-  .flash {
-    animation: flash .16s infinite alternate;
-  }
-
-  @keyframes flash {
-    from { filter: none; transform: translateX(0); }
-    to { filter: hue-rotate(6deg) brightness(1.6); transform: translateX(1px); }
-  }
-
-  .glitching {
-    animation: glitch .12s infinite;
-  }
-
-  @keyframes glitch {
-    0% { transform: translate(0); filter: none; }
-    20% { transform: translate(-4px, 2px); filter: hue-rotate(90deg); }
-    40% { transform: translate(3px, -2px); filter: brightness(1.8); }
-    60% { transform: translate(-2px, -3px); filter: invert(.08); }
-    80% { transform: translate(2px, 1px); filter: hue-rotate(180deg); }
-    100% { transform: translate(0); filter: none; }
-  }
-
-  .dying {
-    animation: fadeout 1.5s ease forwards;
-  }
-
-  @keyframes fadeout {
-    from { opacity: 1; }
-    to { opacity: 0; }
-  }
-
-  .login-wrap {
-    height: 100%;
-    display: grid;
-    place-items: center;
-    padding: 22px;
-  }
-
-  .login-card {
-    width: min(520px, 100%);
-    border: 1px solid rgba(77,255,154,0.16);
-    background:
-      linear-gradient(180deg, rgba(10,16,16,0.95), rgba(5,8,10,0.96)),
-      radial-gradient(circle at 50% 0%, rgba(0,255,140,0.09), transparent 45%);
-    box-shadow: inset 0 0 30px rgba(0,0,0,0.35);
-    padding: 24px 24px 18px;
-  }
-
-  .login-title {
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 700;
-    font-size: 28px;
-    letter-spacing: 6px;
-    text-align: center;
-    color: var(--green);
-    margin-bottom: 8px;
-  }
-
-  .login-sub {
-    text-align: center;
-    color: var(--muted);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    font-size: 11px;
-    margin-bottom: 18px;
-  }
-
-  .login-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px 14px;
-    color: #a8c7b7;
-    font-size: 12px;
-    margin-bottom: 18px;
-  }
-
-  .login-grid .row {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    padding-bottom: 4px;
-  }
-
-  .login-input {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    border-top: 1px solid rgba(255,255,255,0.06);
-    padding-top: 14px;
-  }
-
-  .login-input .label {
-    color: var(--green-dim);
-    font-size: 13px;
-    flex: 0 0 auto;
-  }
-
-  #login-input {
-    flex: 1;
-    background: transparent;
-    border: 1px solid rgba(255,255,255,0.10);
-    outline: none;
-    padding: 10px 12px;
-    color: var(--green);
-    font-family: inherit;
-    font-size: 14px;
-    caret-color: var(--green);
-  }
-
-  #login-input::placeholder { color: rgba(28, 119, 72, 0.58); }
-
-  .login-foot {
-    margin-top: 12px;
-    color: #748a83;
-    font-size: 11px;
-    text-align: center;
-    line-height: 1.45;
-  }
-
-  .rarity-consumer { color: #aaa; }
-  .rarity-industrial { color: #6ea8ff; }
-  .rarity-milspec { color: #4b69cd; }
-  .rarity-restricted { color: #8d54ff; }
-  .rarity-classified { color: #d32ce6; }
-  .rarity-covert { color: #ff5d5d; }
-  .rarity-gold { color: #e4ae39; }
-
-  .hidden { display: none !important; }
-
-  @media (max-width: 920px) {
-    .shell { width: 100vw; height: 100vh; top: 0; border: none; }
-    .workspace { grid-template-columns: 1fr; }
-    .screen { border-right: none; border-bottom: 1px solid var(--line); }
-  }
 </style>
 </head>
 <body>
-  <div class="shell" id="terminal">
-    <div class="topbar">
-      <div class="dot"></div>
-      <div class="topbar-title">CS2 TRADE NETWORK // ENCRYPTED CHANNEL</div>
-      <div class="topbar-right">
-        <span id="session-display">SESSION: ----</span>
-        <span class="badge" id="phase-badge">LOCKED</span>
-      </div>
-    </div>
-
-    <div id="login-view" class="login-wrap">
-      <div class="login-card">
-        <div class="login-title">GENESIS NODE</div>
-        <div class="login-sub">sealed uplink terminal</div>
-        <div class="login-grid">
-          <div class="row"><span>CHANNEL</span><span>ARMS DEALER</span></div>
-          <div class="row"><span>SECURE LINK</span><span>ACTIVE</span></div>
-          <div class="row"><span>SESSION ID</span><span id="login-session">----</span></div>
-          <div class="row"><span>ACCESS TYPE</span><span>4-DIGIT PASS</span></div>
-        </div>
-        <div class="login-input">
-          <div class="label" id="login-label">PASS &gt;</div>
-          <input type="password" id="login-input" placeholder="enter access code..." autocomplete="off" autofocus />
-        </div>
-        <div class="login-foot">
-          The password is derived from the visible session ID.<br />
-          Keep this page and the other CS2 tools on the same origin so shared storage stays in sync.
-        </div>
-      </div>
-    </div>
-
-    <div id="app-view" class="workspace hidden">
-      <div class="screen">
-        <div class="screen-header">
-          <span>Dealer Chat</span>
-          <span id="attempts-display">ATTEMPTS LEFT: 10</span>
-        </div>
-        <div class="screen-body" id="screen"></div>
-      </div>
-
-      <div class="right">
-        <div class="right-header">
-          <span>Current Offer</span>
-          <span id="status-note">awaiting authentication</span>
-        </div>
-        <div class="panel-scroll" id="offer-panel">
-          <div class="offer-card">
-            <div class="offer-hero">
-              <div class="ring"></div>
-              <div class="halo"></div>
-              <div class="offer-case"></div>
-              <div class="offer-logo">CS2</div>
-            </div>
-            <div class="item-name" id="offer-name">No offer yet</div>
-            <div class="item-rarity" id="offer-rarity">LOCKED</div>
-            <div class="item-wear" id="offer-wear">Authenticate to begin negotiation.</div>
-            <div class="item-float" id="offer-float">Float: --</div>
-            <div class="price" id="offer-price">$0.00</div>
-            <div class="offer-meta">
-              <div class="kv"><span>Vendor</span><span id="offer-vendor">----</span></div>
-              <div class="kv"><span>Limit</span><span id="offer-limit">10 rejects</span></div>
-              <div class="kv"><span>Wallet</span><span id="offer-wallet">$0.00</span></div>
-              <div class="kv"><span>Risk</span><span id="offer-risk">High</span></div>
-            </div>
-            <div class="right-actions">
-              <button class="action buy" id="buy-btn" disabled>BUY</button>
-              <button class="action pass" id="pass-btn" disabled>DECLINE</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="input-bar hidden" id="command-bar">
-      <span class="prompt" id="prompt-label">PASS &gt;</span>
-      <input type="password" id="cmd-input" placeholder="enter access code..." autocomplete="off" />
-    </div>
-
-    <div class="status-bar">
-      <span>CONN: SECURE • ENC: AES-256 • ANON: ACTIVE</span>
-      <span>BALANCE: $<span class="money-display" id="money-display">0.00</span></span>
-      <span id="status-right">SESSION ROUTED</span>
-    </div>
+<div id="app">
+  <!-- Title bar -->
+  <div class="titlebar">
+    <div class="titlebar-dot"></div>
+    <span class="titlebar-name">CS2 TRADE VAULT</span>
+    <span style="font-size:9px;color:#1a4020">v2.0 // ENCRYPTED</span>
+    <div class="titlebar-right">SESSION: <span id="hdr-session">----</span> &nbsp;|&nbsp; $<span id="hdr-money">0.00</span></div>
   </div>
 
-<script>
-(() => {
-  const STORE_KEY = 'cs2_shared';
-  const REJECT_LIMIT = 10;
-  const SELL_RATE = 0.8;
+  <!-- Tab bar -->
+  <div class="tabbar">
+    <button class="tab-btn active" data-tab="terminal">◈ TERMINAL</button>
+    <button class="tab-btn" data-tab="market">◈ MARKET <span class="badge" id="tab-mkt-tick">5:00</span></button>
+    <button class="tab-btn" data-tab="inventory">◈ INVENTORY <span class="badge" id="tab-inv-count">0</span></button>
+    <button class="tab-btn" data-tab="keygen">◈ KEYGEN</button>
+  </div>
 
-  const BASE_ITEMS = [
-    { name: 'AK-47 | Redline', rarity: 'classified', wear: 'Field-Tested', price: 24.50, float: '0.2341' },
-    { name: 'AWP | Asiimov', rarity: 'covert', wear: 'Battle-Scarred', price: 67.00, float: '0.7812' },
-    { name: 'M4A4 | Howl', rarity: 'gold', wear: 'Minimal Wear', price: 1840.00, float: '0.1102' },
-    { name: 'Karambit | Fade', rarity: 'gold', wear: 'Factory New', price: 2100.00, float: '0.0322' },
-    { name: 'Desert Eagle | Blaze', rarity: 'classified', wear: 'Factory New', price: 412.00, float: '0.0071' },
-    { name: 'Glock-18 | Fade', rarity: 'classified', wear: 'Factory New', price: 380.00, float: '0.0214' },
-    { name: 'USP-S | Kill Confirmed', rarity: 'covert', wear: 'Minimal Wear', price: 88.00, float: '0.0981' },
-    { name: 'M4A1-S | Knight', rarity: 'covert', wear: 'Field-Tested', price: 156.00, float: '0.3211' },
-    { name: 'AK-47 | Fire Serpent', rarity: 'covert', wear: 'Well-Worn', price: 310.00, float: '0.4422' },
-    { name: 'Butterfly Knife | Tiger Tooth', rarity: 'gold', wear: 'Factory New', price: 1250.00, float: '0.0099' },
-    { name: 'FAMAS | Valence', rarity: 'milspec', wear: 'Minimal Wear', price: 3.20, float: '0.1301' },
-    { name: 'Five-SeveN | Monkey Business', rarity: 'milspec', wear: 'Factory New', price: 6.80, float: '0.0512' },
-    { name: 'MAC-10 | Neon Rider', rarity: 'restricted', wear: 'Minimal Wear', price: 14.00, float: '0.1122' },
-    { name: 'Stiletto Knife | Doppler', rarity: 'gold', wear: 'Factory New', price: 450.00, float: '0.0233' },
-    { name: 'P250 | See Ya Later', rarity: 'restricted', wear: 'Field-Tested', price: 9.50, float: '0.2801' },
-    { name: 'AUG | Chameleon', rarity: 'milspec', wear: 'Factory New', price: 5.60, float: '0.0712' },
-    { name: 'SG 553 | Cyrex', rarity: 'restricted', wear: 'Minimal Wear', price: 11.20, float: '0.0933' },
-    { name: 'M4A4 | Neo-Noir', rarity: 'covert', wear: 'Field-Tested', price: 42.00, float: '0.2801' },
-  ];
+  <!-- Content area -->
+  <div class="content-area">
 
-  const VENDOR_NAMES = [
-    'Aleksandr_V', 'ShadowBroker99', 'TradeKingRU', 'dark_merchant',
-    'xXSkinVaultXx', 'booth_proxy', 'node_7', 'dealer_03'
-  ];
-
-  const GREETINGS = [
-    'yo. heard you were looking. i got something.',
-    'bro you actually came. okay. listen up.',
-    'dont tell anyone about this channel. just between us.',
-    'finally. been waiting. got fresh stock in.',
-    'new stuff just landed. you got timing.'
-  ];
-
-  const PITCH_INTROS = [
-    'check this out:', 'got this right now:', 'fresh drop:', 'one-time offer:',
-    'just pulled this:', 'straight from a case:'
-  ];
-
-  const REJECT_RESPONSES = [
-    'fine. your loss.', 'okay okay. but hear me out on the next one.',
-    'bro really? that price is steal.', 'whatever man. i got more.',
-    'lol okay. next one is better anyway.', 'you serious? alright.',
-    'not for everyone i guess.', 'fair. but youre missing out.',
-    'thats actually insane value but okay', 'ok i see you. selective buyer. i respect.'
-  ];
-
-  const BUY_RESPONSES = [
-    'TRANSACTION CONFIRMED. sending now.',
-    'deal. encrypting transfer.',
-    'smart move. item is yours.',
-    'good call. ill process it.'
-  ];
-
-  const el = {
-    terminal: document.getElementById('terminal'),
-    loginView: document.getElementById('login-view'),
-    appView: document.getElementById('app-view'),
-    commandBar: document.getElementById('command-bar'),
-    loginInput: document.getElementById('login-input'),
-    cmdInput: document.getElementById('cmd-input'),
-    loginSession: document.getElementById('login-session'),
-    sessionDisplay: document.getElementById('session-display'),
-    promptLabel: document.getElementById('prompt-label'),
-    phaseBadge: document.getElementById('phase-badge'),
-    statusNote: document.getElementById('status-note'),
-    moneyDisplay: document.getElementById('money-display'),
-    statusRight: document.getElementById('status-right'),
-    attemptsDisplay: document.getElementById('attempts-display'),
-    offerName: document.getElementById('offer-name'),
-    offerRarity: document.getElementById('offer-rarity'),
-    offerWear: document.getElementById('offer-wear'),
-    offerFloat: document.getElementById('offer-float'),
-    offerPrice: document.getElementById('offer-price'),
-    offerVendor: document.getElementById('offer-vendor'),
-    offerLimit: document.getElementById('offer-limit'),
-    offerWallet: document.getElementById('offer-wallet'),
-    offerRisk: document.getElementById('offer-risk'),
-    buyBtn: document.getElementById('buy-btn'),
-    passBtn: document.getElementById('pass-btn'),
-    screen: document.getElementById('screen'),
-    offerPanel: document.getElementById('offer-panel'),
-  };
-
-  const STATE = {
-    phase: 'login',
-    busy: false,
-    sessionId: null,
-    correctPassword: null,
-    currentItem: null,
-    vendor: null,
-    rejects: 0,
-  };
-
-  function round2(value) {
-    return Math.round(Number(value || 0) * 100) / 100;
-  }
-
-  function money(value) {
-    return `$${round2(value).toFixed(2)}`;
-  }
-
-  function newSessionId() {
-    return Math.floor(1000 + Math.random() * 8999);
-  }
-
-  function derivePassword(sessionId) {
-    return String((Number(sessionId) * 31 + 7) % 9999).padStart(4, '0');
-  }
-
-  function makeId() {
-    return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-  }
-
-  function defaultStore() {
-    return {
-      schemaVersion: 2,
-      sessionId: newSessionId(),
-      dead: false,
-      money: 0,
-      inventory: [],
-      prices: {},
-      priceLog: [],
-      marketTick: 0,
-      marketUpdatedAt: 0,
-      nextTick: 0,
-    };
-  }
-
-  function normalizeStore(raw) {
-    const base = defaultStore();
-    if (!raw || typeof raw !== 'object') return base;
-
-    const out = { ...base, ...raw };
-
-    out.sessionId = Number.isFinite(Number(out.sessionId)) ? Number(out.sessionId) : base.sessionId;
-    out.dead = !!out.dead;
-    out.money = Number.isFinite(Number(out.money)) ? round2(out.money) : 0;
-
-    out.inventory = Array.isArray(out.inventory)
-      ? out.inventory
-          .filter((item) => item && typeof item === 'object')
-          .map((item) => ({
-            name: String(item.name || 'Unknown Item'),
-            rarity: String(item.rarity || 'consumer'),
-            wear: String(item.wear || 'Unknown'),
-            price: round2(Number(item.price) || 0),
-            float: String(item.float || '0.0000'),
-            boughtAt: round2(Number(item.boughtAt ?? item.price) || 0),
-            acquiredTime: Number(item.acquiredTime) || Date.now(),
-            id: String(item.id || makeId()),
-          }))
-      : [];
-
-    out.prices = (out.prices && typeof out.prices === 'object' && !Array.isArray(out.prices)) ? out.prices : {};
-    out.priceLog = Array.isArray(out.priceLog) ? out.priceLog : [];
-
-    out.marketTick = Number.isFinite(Number(out.marketTick)) ? Number(out.marketTick) : 0;
-    out.marketUpdatedAt = Number.isFinite(Number(out.marketUpdatedAt)) ? Number(out.marketUpdatedAt) : 0;
-    out.nextTick = Number.isFinite(Number(out.nextTick)) ? Number(out.nextTick) : 0;
-
-    return out;
-  }
-
-  function readStore() {
-    try {
-      const raw = localStorage.getItem(STORE_KEY);
-      if (!raw) return null;
-      return normalizeStore(JSON.parse(raw));
-    } catch {
-      return null;
-    }
-  }
-
-  function writeStore(store) {
-    localStorage.setItem(STORE_KEY, JSON.stringify(normalizeStore(store)));
-  }
-
-  function updateStore(mutator) {
-    const current = readStore() || defaultStore();
-    const draft = JSON.parse(JSON.stringify(current));
-    const result = mutator(draft) || draft;
-    const normalized = normalizeStore(result);
-    writeStore(normalized);
-    return normalized;
-  }
-
-  function bootStore() {
-    const existing = readStore();
-    if (!existing) {
-      writeStore(defaultStore());
-    }
-    return readStore() || defaultStore();
-  }
-
-  function getMoney() {
-    const store = readStore() || defaultStore();
-    return round2(store.money);
-  }
-
-  function setMoney(value) {
-    updateStore((draft) => {
-      draft.money = Math.max(0, round2(value));
-      return draft;
-    });
-    syncHeader();
-  }
-
-  function getCurrentPrice(name, fallbackPrice) {
-    const store = readStore() || defaultStore();
-    const override = store.prices && typeof store.prices[name] === 'number' ? store.prices[name] : null;
-    return round2(override == null ? fallbackPrice : override);
-  }
-
-  function pickItem() {
-    const base = BASE_ITEMS[Math.floor(Math.random() * BASE_ITEMS.length)];
-    return {
-      ...base,
-      price: getCurrentPrice(base.name, base.price),
-    };
-  }
-
-  function rarityClass(rarity) {
-    return `rarity-${rarity}`;
-  }
-
-  function vendorName() {
-    return STATE.vendor || 'dealer';
-  }
-
-  function printLine(text, cls = '', container = el.screen) {
-    const line = document.createElement('div');
-    line.className = `line${cls ? ` ${cls}` : ''}`;
-    line.textContent = text;
-    container.appendChild(line);
-    container.scrollTop = container.scrollHeight;
-    return line;
-  }
-
-  function printSep() {
-    printLine('──────────────────────────────────────────────────────────', 'sep');
-  }
-
-  function bubble(text, type = 'system') {
-    const wrap = document.createElement('div');
-    wrap.className = `bubble ${type}`;
-
-    const av = document.createElement('div');
-    av.className = 'avatar';
-    av.textContent = type === 'vendor' ? 'D' : type === 'warn' ? '!' : 'S';
-
-    const tx = document.createElement('div');
-    tx.className = 'text';
-    tx.textContent = text;
-
-    wrap.appendChild(av);
-    wrap.appendChild(tx);
-    el.screen.appendChild(wrap);
-    el.screen.scrollTop = el.screen.scrollHeight;
-  }
-
-  function printHint(text) {
-    const box = document.createElement('div');
-    box.className = 'hint-box';
-    box.textContent = text;
-    el.screen.appendChild(box);
-    el.screen.scrollTop = el.screen.scrollHeight;
-  }
-
-  function printItem(item) {
-    const block = document.createElement('div');
-    block.className = 'offer-card';
-    block.style.marginTop = '10px';
-    block.innerHTML = `
-      <div class="offer-hero" style="height:170px;margin-bottom:12px;">
-        <div class="ring"></div>
-        <div class="halo"></div>
-        <div class="offer-case"></div>
-        <div class="offer-logo">CS2</div>
+    <!-- ══════════════════ TERMINAL ══════════════════ -->
+    <div class="tab-pane active" id="pane-terminal">
+      <div class="terminal-output" id="t-output"></div>
+      <div class="terminal-input-bar">
+        <span class="t-prompt" id="t-prompt">PASS &gt;</span>
+        <input type="password" id="t-input" placeholder="enter access code..." autocomplete="off" />
       </div>
-      <div class="item-name">${item.name}</div>
-      <div class="item-rarity ${rarityClass(item.rarity)}">[${item.rarity.toUpperCase()}] ${item.wear}</div>
-      <div class="item-float">Float: ${item.float}</div>
-      <div class="price">${money(item.price)}</div>
-    `;
-    el.screen.appendChild(block);
-    el.screen.scrollTop = el.screen.scrollHeight;
-  }
+    </div>
 
-  function updateOfferPanel(item = STATE.currentItem) {
-    const store = readStore() || defaultStore();
+    <!-- ══════════════════ MARKET ══════════════════ -->
+    <div class="tab-pane" id="pane-market">
+      <div class="page">
+        <div class="price-sync-note" id="sync-note">🌐 PRICES GLOBALLY SYNCED — deterministic seed, same slot = same price worldwide</div>
+        <div class="ticker-wrap"><div class="ticker-inner" id="mkt-ticker"></div></div>
+        <div class="page-head">
+          <div class="section-title">Live Market — All 68 Items</div>
+          <div style="font-size:9px;color:#1a4020">Next tick: <span id="mkt-countdown" style="color:var(--dim)">--:--</span></div>
+        </div>
+        <table class="mkt-table">
+          <thead><tr><th>Item</th><th>Rarity</th><th>Current</th><th>Base</th><th>5-min Δ</th></tr></thead>
+          <tbody id="mkt-body"></tbody>
+        </table>
+      </div>
+    </div>
 
-    el.offerWallet.textContent = money(store.money);
-    el.offerLimit.textContent = `${Math.max(0, REJECT_LIMIT - STATE.rejects)} rejects`;
-    el.attemptsDisplay.textContent = `ATTEMPTS LEFT: ${Math.max(0, REJECT_LIMIT - STATE.rejects)}`;
-    el.offerVendor.textContent = vendorName();
-    el.statusNote.textContent = STATE.phase === 'chat' ? 'live negotiation' : 'awaiting authentication';
-    el.statusRight.textContent = `INVENTORY: ${store.inventory.length}`;
+    <!-- ══════════════════ INVENTORY ══════════════════ -->
+    <div class="tab-pane" id="pane-inventory">
+      <div class="page">
+        <!-- Daily banner -->
+        <div class="daily-banner" id="daily-banner" style="display:none">
+          <span class="msg">📦 DAILY DROP AVAILABLE — $50.00 waiting for you</span>
+          <button class="btn green" id="daily-btn">CLAIM $50</button>
+        </div>
 
-    if (!item) {
-      el.offerName.textContent = 'No offer yet';
-      el.offerRarity.textContent = 'LOCKED';
-      el.offerRarity.className = 'item-rarity';
-      el.offerWear.textContent = 'Authenticate to begin negotiation.';
-      el.offerFloat.textContent = 'Float: --';
-      el.offerPrice.textContent = '$0.00';
-      el.offerRisk.textContent = 'High';
-      return;
+        <div class="stats-row" id="inv-stats">
+          <div class="stat-box"><div class="lbl">Items</div><div class="val" id="s-items">0</div></div>
+          <div class="stat-box"><div class="lbl">Portfolio Value</div><div class="val yel" id="s-value">$0.00</div></div>
+          <div class="stat-box"><div class="lbl">Total P / L</div><div class="val" id="s-pl">$0.00</div></div>
+          <div class="stat-box"><div class="lbl">Wallet</div><div class="val yel" id="s-wallet">$0.00</div></div>
+        </div>
+
+        <div class="page-head">
+          <div class="section-title">Acquired Items</div>
+          <div style="font-size:9px;color:#1a4020">Sell fee: 10%</div>
+        </div>
+        <div class="item-grid" id="inv-grid"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ KEYGEN ══════════════════ -->
+    <div class="tab-pane" id="pane-keygen">
+      <div class="page">
+        <div class="wallet-strip">
+          <div>
+            <div class="w-label">Wallet Balance</div>
+            <div class="w-bal" id="kg-wallet">$0.00</div>
+            <div class="w-sub">earned from terminal activity</div>
+          </div>
+          <div style="font-size:24px;opacity:0.25">🔐</div>
+        </div>
+
+        <div class="section-title" style="margin-bottom:12px">Purchase Passcode</div>
+        <div class="kg-options">
+          <div class="kg-card">
+            <div class="kc-name">Guaranteed Decode</div>
+            <div class="kc-price">$25.00</div>
+            <div class="kc-odds">100% chance — always correct</div>
+            <button class="btn green" id="kg-sure-btn">PURCHASE</button>
+          </div>
+          <div class="kg-card">
+            <div class="kc-name">Gamble Decode</div>
+            <div class="kc-price">$5.00</div>
+            <div class="kc-odds">20% chance — may be wrong</div>
+            <button class="btn yel" id="kg-gamble-btn">TRY LUCK</button>
+          </div>
+        </div>
+
+        <div class="section-title" style="margin-bottom:10px">Target Session ID</div>
+        <div class="input-row">
+          <div class="input-wrap">
+            <label>SESSION &gt;</label>
+            <input type="number" id="kg-sid-input" placeholder="e.g. 4812" min="1000" max="9999" />
+          </div>
+          <button class="btn" id="kg-autofill-btn">AUTO-FILL</button>
+        </div>
+
+        <div class="result-box" id="kg-result">
+          <div class="rb-placeholder">// awaiting purchase...</div>
+        </div>
+
+        <hr class="sep-line">
+        <div class="page-head">
+          <div class="section-title">Decode History</div>
+          <div style="font-size:9px;color:#1a4020" id="kg-hist-count">(0)</div>
+        </div>
+        <div style="color:#1a3a18;font-size:11px;padding:8px 0" id="kg-hist-empty">No decodes yet.</div>
+        <table class="hist-table" id="kg-hist-table" style="display:none">
+          <thead><tr><th>Session</th><th>Password</th><th>Result</th><th>Cost</th><th>Time</th></tr></thead>
+          <tbody id="kg-hist-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /content-area -->
+
+  <!-- Status bar -->
+  <div class="statusbar">
+    <span>PRICE ENGINE: <span class="live">SEEDED GLOBAL</span> // TICK: 5min // ALGO: mulberry32×slot</span>
+    <span id="status-time"></span>
+  </div>
+</div>
+
+<script>
+
+// ════════════════════════════════════════════════════════
+// SOUND EFFECTS
+// ════════════════════════════════════════════════════════
+const SFX = {
+  typing: new Audio('typing.mp3'),
+  tab: new Audio('tab.mp3'),
+  money: new Audio('money.mp3'),
+  success: new Audio('success.mp3'),
+  error: new Audio('error.mp3'),
+  welcome: new Audio('welcome.mp3'),
+  glitch: new Audio('glitch.mp3'),
+  littleglitch: new Audio('littleglitch.mp3'),
+  test: new Audio('test.mp3'),
+  binary: new Audio('binary.mp3')
+};
+
+SFX.typing.volume = 0.12;
+SFX.tab.volume = 0.35;
+SFX.money.volume = 0.45;
+SFX.success.volume = 0.4;
+SFX.error.volume = 0.4;
+SFX.welcome.volume = 0.35;
+SFX.glitch.volume = 0.5;
+SFX.littleglitch.volume = 0.35;
+
+SFX.welcome.loop = true;
+
+Object.values(SFX).forEach(s=>{
+  s.preload='auto';
+  try{s.load();}catch(e){}
+});
+
+function playSfx(name){
+  const s = SFX[name];
+  if(!s) return;
+
+  try{
+    if(name==='welcome'){
+      s.currentTime=0;
+      s.play();
+    } else {
+      const snd=s.cloneNode();
+      snd.volume=s.volume;
+      snd.play();
     }
+  }catch(e){}
+}
 
-    el.offerName.textContent = item.name;
-    el.offerRarity.textContent = item.rarity.toUpperCase();
-    el.offerRarity.className = `item-rarity ${rarityClass(item.rarity)}`;
-    el.offerWear.textContent = item.wear;
-    el.offerFloat.textContent = `Float: ${item.float}`;
-    el.offerPrice.textContent = money(item.price);
-    el.offerRisk.textContent = item.rarity === 'gold' ? 'Extreme' : item.rarity === 'covert' ? 'Very High' : 'High';
+function stopSfx(name){
+  const s = SFX[name];
+  if(!s) return;
+  try{
+    s.pause();
+    s.currentTime = 0;
+  }catch(e){}
+}
+
+// ════════════════════════════════════════════════════════
+// DATABASE
+// ════════════════════════════════════════════════════════
+const STORE_KEY = 'cs2_vault_v2';
+
+let DB = {
+  money: 0,
+  inventory: [],
+  sessionId: null,
+  dead: false,
+  lastDaily: 0,
+  kgHistory: [],
+  testMode:false,
+  originalState:null,
+};
+
+function loadDB() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) DB = { ...DB, ...JSON.parse(raw) };
+  } catch(e) {}
+  if (!DB.sessionId) {
+    DB.sessionId = newSessionId();
+    DB.dead = false;
   }
+  saveDB();
+}
 
-  function syncHeader() {
-    const store = bootStore();
-    STATE.sessionId = store.sessionId;
-    STATE.correctPassword = derivePassword(store.sessionId);
+function saveDB() {
+  if(DB.testMode) { refreshHeaderMoney(); return; }
+  localStorage.setItem(STORE_KEY, JSON.stringify(DB));
+  refreshHeaderMoney();
+}
 
-    el.sessionDisplay.textContent = `SESSION: ${STATE.sessionId}`;
-    el.loginSession.textContent = STATE.sessionId;
-    el.moneyDisplay.textContent = round2(store.money).toFixed(2);
-    el.phaseBadge.textContent = STATE.phase === 'chat' ? 'LIVE' : 'LOCKED';
-    el.phaseBadge.className = 'badge';
-    updateOfferPanel(STATE.currentItem);
+function newSessionId() { return Math.floor(1000 + Math.random() * 8999); }
+function derivePassword(sid) { return String((sid * 31 + 7) % 9999).padStart(4,'0'); }
+
+// ════════════════════════════════════════════════════════
+// ITEMS DATABASE — 68 ITEMS
+// ════════════════════════════════════════════════════════
+const ITEMS = [
+  // ── CONSUMER ────────────────────────────────────
+  {name:"MP9 | Setting Sun",              rarity:"consumer",   wear:"Minimal Wear",   basePrice:0.89,  float:"0.1201"},
+  {name:"Nova | Walnut",                  rarity:"consumer",   wear:"Field-Tested",   basePrice:0.55,  float:"0.3401"},
+  {name:"Tec-9 | Brass",                  rarity:"consumer",   wear:"Well-Worn",      basePrice:0.72,  float:"0.4812"},
+  {name:"PP-Bizon | Chemical Green",      rarity:"consumer",   wear:"Battle-Scarred", basePrice:0.61,  float:"0.6701"},
+  {name:"Negev | Army Sheen",             rarity:"consumer",   wear:"Field-Tested",   basePrice:1.20,  float:"0.2901"},
+  {name:"XM1014 | Blue Steel",            rarity:"consumer",   wear:"Well-Worn",      basePrice:0.88,  float:"0.5012"},
+  {name:"MAG-7 | Sand Dune",              rarity:"consumer",   wear:"Factory New",    basePrice:1.45,  float:"0.0401"},
+  {name:"MP7 | Gunsmoke",                 rarity:"consumer",   wear:"Field-Tested",   basePrice:0.93,  float:"0.3201"},
+  {name:"Sawed-Off | Origami",            rarity:"consumer",   wear:"Minimal Wear",   basePrice:1.10,  float:"0.1601"},
+  {name:"G3SG1 | Brown Sand",             rarity:"consumer",   wear:"Battle-Scarred", basePrice:0.48,  float:"0.7201"},
+  // ── INDUSTRIAL ──────────────────────────────────
+  {name:"SSG 08 | Abyss",                 rarity:"industrial", wear:"Minimal Wear",   basePrice:4.20,  float:"0.0981"},
+  {name:"Dual Berettas | Cobalt Quartz",  rarity:"industrial", wear:"Field-Tested",   basePrice:5.80,  float:"0.2341"},
+  {name:"SCAR-20 | Contractor",           rarity:"industrial", wear:"Minimal Wear",   basePrice:6.10,  float:"0.1412"},
+  {name:"MP5-SD | Phosphor",              rarity:"industrial", wear:"Field-Tested",   basePrice:8.50,  float:"0.2801"},
+  {name:"UMP-45 | Blaze",                 rarity:"industrial", wear:"Factory New",    basePrice:7.20,  float:"0.0312"},
+  {name:"CZ75-Auto | Tread Plate",        rarity:"industrial", wear:"Minimal Wear",   basePrice:4.80,  float:"0.1101"},
+  {name:"P90 | Sand Spray",               rarity:"industrial", wear:"Field-Tested",   basePrice:9.80,  float:"0.2812"},
+  {name:"Galil AR | Tornado",             rarity:"industrial", wear:"Factory New",    basePrice:6.60,  float:"0.0611"},
+  // ── MIL-SPEC ────────────────────────────────────
+  {name:"FAMAS | Valence",                rarity:"milspec",    wear:"Minimal Wear",   basePrice:3.20,  float:"0.1301"},
+  {name:"Five-SeveN | Monkey Business",   rarity:"milspec",    wear:"Factory New",    basePrice:6.80,  float:"0.0512"},
+  {name:"AUG | Chameleon",                rarity:"milspec",    wear:"Factory New",    basePrice:5.60,  float:"0.0712"},
+  {name:"AK-47 | Safari Mesh",            rarity:"milspec",    wear:"Field-Tested",   basePrice:9.20,  float:"0.3201"},
+  {name:"M4A1-S | Flashback",             rarity:"milspec",    wear:"Minimal Wear",   basePrice:22.00, float:"0.0981"},
+  {name:"AWP | Electric Hive",            rarity:"milspec",    wear:"Factory New",    basePrice:31.00, float:"0.0412"},
+  {name:"Galil AR | Rocket Pop",          rarity:"milspec",    wear:"Factory New",    basePrice:12.40, float:"0.0712"},
+  {name:"FAMAS | Mecha Industries",       rarity:"milspec",    wear:"Minimal Wear",   basePrice:14.80, float:"0.1201"},
+  {name:"MP9 | Hypnotic",                 rarity:"milspec",    wear:"Field-Tested",   basePrice:8.90,  float:"0.2401"},
+  {name:"P2000 | Ocean Foam",             rarity:"milspec",    wear:"Factory New",    basePrice:19.50, float:"0.0512"},
+  {name:"R8 Revolver | Crimson Web",      rarity:"milspec",    wear:"Field-Tested",   basePrice:11.20, float:"0.3101"},
+  {name:"AUG | Aristocrat",               rarity:"milspec",    wear:"Factory New",    basePrice:16.40, float:"0.0412"},
+  // ── RESTRICTED ──────────────────────────────────
+  {name:"MAC-10 | Neon Rider",            rarity:"restricted", wear:"Minimal Wear",   basePrice:14.00, float:"0.1122"},
+  {name:"P250 | See Ya Later",            rarity:"restricted", wear:"Field-Tested",   basePrice:9.50,  float:"0.2801"},
+  {name:"SG 553 | Cyrex",                 rarity:"restricted", wear:"Minimal Wear",   basePrice:11.20, float:"0.0933"},
+  {name:"AK-47 | Neon Revolution",        rarity:"restricted", wear:"Minimal Wear",   basePrice:38.00, float:"0.1201"},
+  {name:"M4A4 | Dragon King",             rarity:"restricted", wear:"Field-Tested",   basePrice:42.00, float:"0.2601"},
+  {name:"USP-S | Guardian",               rarity:"restricted", wear:"Factory New",    basePrice:55.00, float:"0.0312"},
+  {name:"AWP | Mortis",                   rarity:"restricted", wear:"Field-Tested",   basePrice:29.00, float:"0.2801"},
+  {name:"Desert Eagle | Kumicho Dragon",  rarity:"restricted", wear:"Minimal Wear",   basePrice:48.00, float:"0.1001"},
+  {name:"Glock-18 | Water Elemental",     rarity:"restricted", wear:"Factory New",    basePrice:62.00, float:"0.0412"},
+  {name:"P250 | Asiimov",                 rarity:"restricted", wear:"Field-Tested",   basePrice:24.00, float:"0.3212"},
+  // ── CLASSIFIED ──────────────────────────────────
+  {name:"AK-47 | Redline",                rarity:"classified", wear:"Field-Tested",   basePrice:24.50, float:"0.2341"},
+  {name:"Desert Eagle | Blaze",           rarity:"classified", wear:"Factory New",    basePrice:412.00,float:"0.0071"},
+  {name:"Glock-18 | Fade",                rarity:"classified", wear:"Factory New",    basePrice:380.00,float:"0.0214"},
+  {name:"AK-47 | The Empress",            rarity:"classified", wear:"Minimal Wear",   basePrice:145.00,float:"0.0901"},
+  {name:"M4A1-S | Icarus Fell",           rarity:"classified", wear:"Factory New",    basePrice:188.00,float:"0.0412"},
+  {name:"AWP | Fever Dream",              rarity:"classified", wear:"Minimal Wear",   basePrice:220.00,float:"0.0801"},
+  {name:"Desert Eagle | Printstream",     rarity:"classified", wear:"Factory New",    basePrice:178.00,float:"0.0312"},
+  {name:"Glock-18 | Neo-Noir",            rarity:"classified", wear:"Field-Tested",   basePrice:95.00, float:"0.2401"},
+  {name:"M4A4 | In Living Color",         rarity:"classified", wear:"Minimal Wear",   basePrice:134.00,float:"0.1101"},
+  {name:"USP-S | Monster Mashup",         rarity:"classified", wear:"Field-Tested",   basePrice:72.00, float:"0.2801"},
+  // ── COVERT ──────────────────────────────────────
+  {name:"AWP | Asiimov",                  rarity:"covert",     wear:"Battle-Scarred", basePrice:67.00, float:"0.7812"},
+  {name:"USP-S | Kill Confirmed",         rarity:"covert",     wear:"Minimal Wear",   basePrice:88.00, float:"0.0981"},
+  {name:"M4A1-S | Knight",                rarity:"covert",     wear:"Field-Tested",   basePrice:156.00,float:"0.3211"},
+  {name:"AK-47 | Fire Serpent",           rarity:"covert",     wear:"Well-Worn",      basePrice:310.00,float:"0.4422"},
+  {name:"M4A4 | Neo-Noir",                rarity:"covert",     wear:"Field-Tested",   basePrice:42.00, float:"0.2801"},
+  {name:"AK-47 | Wild Lotus",             rarity:"covert",     wear:"Minimal Wear",   basePrice:480.00,float:"0.0712"},
+  {name:"AWP | Gungnir",                  rarity:"covert",     wear:"Factory New",    basePrice:750.00,float:"0.0312"},
+  {name:"M4A4 | Poseidon",                rarity:"covert",     wear:"Field-Tested",   basePrice:320.00,float:"0.2401"},
+  {name:"USP-S | Printstream",            rarity:"covert",     wear:"Factory New",    basePrice:280.00,float:"0.0412"},
+  {name:"AK-47 | Gold Arabesque",         rarity:"covert",     wear:"Factory New",    basePrice:620.00,float:"0.0212"},
+  // ── GOLD / KNIVES & GLOVES ──────────────────────
+  {name:"M4A4 | Howl",                    rarity:"gold",       wear:"Minimal Wear",   basePrice:1840.00,float:"0.1102"},
+  {name:"Karambit | Fade",                rarity:"gold",       wear:"Factory New",    basePrice:2100.00,float:"0.0322"},
+  {name:"Butterfly Knife | Tiger Tooth",  rarity:"gold",       wear:"Factory New",    basePrice:1250.00,float:"0.0099"},
+  {name:"Stiletto Knife | Doppler",       rarity:"gold",       wear:"Factory New",    basePrice:450.00, float:"0.0233"},
+  {name:"Sport Gloves | Vice",            rarity:"gold",       wear:"Factory New",    basePrice:2800.00,float:"0.0112"},
+  {name:"Driver Gloves | Crimson Weave",  rarity:"gold",       wear:"Minimal Wear",   basePrice:890.00, float:"0.0812"},
+  {name:"Skeleton Knife | Fade",          rarity:"gold",       wear:"Factory New",    basePrice:1680.00,float:"0.0212"},
+  {name:"M9 Bayonet | Doppler",           rarity:"gold",       wear:"Factory New",    basePrice:980.00, float:"0.0312"},
+];
+
+// ════════════════════════════════════════════════════════
+// PRICE ENGINE — seeded global, ±small moves per 5-min tick
+// ════════════════════════════════════════════════════════
+function mulberry32(a) {
+  return function() {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+function slotHash(name, slot) {
+  let h = (slot * 2654435761) | 0;
+  for (let i = 0; i < name.length; i++) h = Math.imul(h ^ name.charCodeAt(i), 16777619) | 0;
+  return h >>> 0;
+}
+
+function getItemPriceForSlot(name, basePrice, slot) {
+  // Walk 60 steps back from this slot — each step = small delta
+  // Same slot → same price for everyone (global sync)
+  const STEPS = 60;
+  let price = basePrice;
+  for (let i = 0; i < STEPS; i++) {
+    const rng = mulberry32(slotHash(name, slot - STEPS + i));
+    const r = rng();
+    // Delta: ±2.5% of base per step (small realistic moves)
+    const delta = (r - 0.5) * 0.05 * basePrice;
+    price = Math.max(basePrice * 0.35, price + delta);
   }
+  return Math.round(price * 100) / 100;
+}
 
-  function setPhase(phase) {
-    STATE.phase = phase;
-    el.phaseBadge.textContent = phase === 'chat' ? 'LIVE' : 'LOCKED';
-    el.phaseBadge.className = 'badge';
-    const enabled = phase === 'chat' && !STATE.busy && !!STATE.currentItem;
-    el.buyBtn.disabled = !enabled;
-    el.passBtn.disabled = !enabled;
+function currentSlot() { return Math.floor(Date.now() / (5 * 60 * 1000)); }
+
+function getItemPrice(name, basePrice) {
+  return getItemPriceForSlot(name, basePrice, currentSlot());
+}
+
+function getItemDelta(name, basePrice) {
+  const s = currentSlot();
+  const cur = getItemPriceForSlot(name, basePrice, s);
+  const prev = getItemPriceForSlot(name, basePrice, s - 1);
+  return Math.round((cur - prev) * 100) / 100;
+}
+
+function secsUntilNextSlot() {
+  const ms = (5 * 60 * 1000) - (Date.now() % (5 * 60 * 1000));
+  return Math.ceil(ms / 1000);
+}
+
+// ════════════════════════════════════════════════════════
+// RARITY WEIGHTS
+// ════════════════════════════════════════════════════════
+const RARITY_THRESHOLDS = [
+  [0.35,  'consumer'],
+  [0.60,  'industrial'],
+  [0.80,  'milspec'],
+  [0.90,  'restricted'],
+  [0.96,  'classified'],
+  [0.99,  'covert'],
+  [1.00,  'gold'],
+];
+
+function pickItemByRarity() {
+  const r = Math.random();
+  let rarity = 'consumer';
+  for (const [thresh, name] of RARITY_THRESHOLDS) {
+    if (r < thresh) { rarity = name; break; }
   }
+  const pool = ITEMS.filter(i => i.rarity === rarity);
+  const base = pool[Math.floor(Math.random() * pool.length)];
+  return { ...base, price: getItemPrice(base.name, base.basePrice) };
+}
 
-  function showLoginScreen() {
-    STATE.busy = false;
-    STATE.currentItem = null;
-    setPhase('login');
+// ════════════════════════════════════════════════════════
+// HEADER / COMMON
+// ════════════════════════════════════════════════════════
+function refreshHeaderMoney() {
+  document.getElementById('hdr-money').textContent = DB.money.toFixed(2);
+  document.getElementById('hdr-session').textContent = DB.sessionId || '----';
+  document.getElementById('s-wallet').textContent = '$' + DB.money.toFixed(2);
+  document.getElementById('kg-wallet').textContent = '$' + DB.money.toFixed(2);
+  document.getElementById('tab-inv-count').textContent = DB.inventory.length;
+}
 
-    el.loginView.classList.remove('hidden');
-    el.appView.classList.add('hidden');
-    el.commandBar.classList.add('hidden');
+// ════════════════════════════════════════════════════════
+// TABS
+// ════════════════════════════════════════════════════════
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    playSfx('tab');
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('pane-' + tab).classList.add('active');
+    if (tab === 'market') renderMarket();
+    if (tab === 'inventory') renderInventory();
+    if (tab === 'keygen') renderKgWallet();
+  });
+});
 
-    el.loginInput.type = 'password';
-    el.loginInput.value = '';
-    el.loginInput.placeholder = 'enter access code...';
+// ════════════════════════════════════════════════════════
+// TERMINAL
+// ════════════════════════════════════════════════════════
+let T = { phase: 'login', rejects: 0, currentItem: null, vendorName: '' };
+const VENDOR_NAMES = ["Aleksandr_V","ShadowBroker99","TradeKingRU","dark_merchant","xXSkinVaultXx","ByteRunner_01","QuantumTrader"];
+const GREETINGS = [
+  "yo. heard you were looking. i got something.",
+  "bro you actually came. okay. listen up.",
+  "dont tell anyone about this channel.",
+  "finally. been waiting. got fresh stock in.",
+  "new stuff just landed. you got timing.",
+  "quick session only. lets move.",
+];
+const PITCHES = ["check this out:","got this right now:","fresh drop:","one-time offer:","just pulled this:","straight from a case:","no questions asked:"];
+const REJECTS = [
+  "fine. your loss.",
+  "okay okay. hear me out on the next one.",
+  "bro really? that price is a steal.",
+  "whatever man. i got more.",
+  "lol okay. next one is better anyway.",
+  "not for everyone i guess.",
+  "fair. but youre missing out.",
+  "thats actually insane value but okay.",
+  "ok i see you. selective buyer. i respect.",
+  "last one i swear. this one's different.",
+];
+const BUYS = ["TRANSACTION CONFIRMED. sending now.","deal. encrypting transfer.","smart move. item is yours.","good call. processing."];
 
-    el.cmdInput.type = 'password';
-    el.cmdInput.value = '';
-    el.cmdInput.placeholder = 'enter access code...';
-    el.cmdInput.disabled = false;
+const tOutput = document.getElementById('t-output');
+const tInput  = document.getElementById('t-input');
+const tPrompt = document.getElementById('t-prompt');
 
-    el.screen.innerHTML = '';
-    updateOfferPanel(null);
-    syncHeader();
+function tPrint(text, cls='', delay=0) {
+  return new Promise(r => setTimeout(() => {
+    const d = document.createElement('div');
+    d.className = 'ln' + (cls ? ' '+cls : '');
+    d.textContent = text;
+    tOutput.appendChild(d);
+    tOutput.scrollTop = tOutput.scrollHeight;
+    r();
+  }, delay));
+}
+
+function tPrintItem(item) {
+  const d = document.createElement('div');
+  d.className = 'item-block';
+  d.innerHTML = `
+    <div class="ib-name">◆ ${item.name}</div>
+    <div class="ib-rar txt-${item.rarity}">[${item.rarity.toUpperCase()}] ${item.wear}</div>
+    <div class="ib-float">Float: ${item.float}</div>
+    <div class="ib-price">Market Price: $${item.price.toFixed(2)}</div>
+  `;
+  tOutput.appendChild(d);
+  tOutput.scrollTop = tOutput.scrollHeight;
+}
+
+function tHint(text) {
+  const d = document.createElement('div');
+  d.className = 'hint-box';
+  d.textContent = text;
+  tOutput.appendChild(d);
+  tOutput.scrollTop = tOutput.scrollHeight;
+}
+
+function tSep() { tPrint('────────────────────────────────────────────────', 'sep'); }
+async function tSleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function tShowLogin(fresh=false) {
+  tOutput.innerHTML = '';
+  tInput.type = 'password'; tInput.placeholder = 'enter access code...';
+  tPrompt.textContent = 'PASS >';
+  await tPrint('  ██████╗███████╗██████╗     ████████╗███████╗██████╗ ███╗   ███╗', 'big');
+  await tPrint('  ██╔════╝██╔════╝╚════██╗    ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║', 'big');
+  await tPrint('  ██║     ███████╗ █████╔╝       ██║   █████╗  ██████╔╝██╔████╔██║', 'big');
+  await tPrint('  ██║     ╚════██║██╔═══╝        ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║', 'big');
+  await tPrint('  ╚██████╗███████║███████╗       ██║   ███████╗██║  ██║██║ ╚═╝ ██║', 'big');
+  await tPrint('   ╚═════╝╚══════╝╚══════╝       ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝', 'big');
+  await tPrint('');
+  tSep();
+  await tPrint(`  SESSION ID : ${DB.sessionId}`, 'dim');
+  await tPrint('  STATUS     : AWAITING AUTHENTICATION', 'dim');
+  tSep();
+  await tPrint('');
+  await tPrint('  Enter your 4-digit access code.', 'whi');
+  if (fresh) { await tPrint('  [!] Credentials rotated. Use new code.', 'red'); }
+  await tPrint('');
+  tInput.value = ''; tInput.focus();
+  T.stopSfx('glitch');
+  phase = 'login';
+}
+
+async function tShowDeadLogin() {
+  tOutput.innerHTML = '';
+  tInput.type = 'password'; tInput.placeholder = 'enter new access code...';
+  tPrompt.textContent = 'PASS >';
+  await tPrint('  ████████╗███████╗██████╗ ███╗   ███╗██╗███╗   ██╗ █████╗ ██╗', 'red');
+  await tPrint('  ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║██║████╗  ██║██╔══██╗██║', 'red');
+  await tPrint('     ██║   █████╗  ██████╔╝██╔████╔██║██║██╔██╗ ██║███████║██║', 'red');
+  await tPrint('     ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║██║██║╚██╗██║██╔══██║██║', 'red');
+  await tPrint('     ██║   ███████╗██║  ██║██║ ╚═╝ ██║██║██║ ╚████║██║  ██║███████╗', 'red');
+  await tPrint('     ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝', 'red');
+  await tPrint('');
+  tSep();
+  await tPrint('  PREVIOUS SESSION TERMINATED', 'red');
+  await tPrint('  ALL CREDENTIALS ROTATED — NEW SESSION ACTIVE', 'red');
+  tSep();
+  await tPrint('');
+  await tPrint(`  NEW SESSION ID : ${DB.sessionId}`, 'yel');
+  await tPrint('  Your wallet balance was preserved.', 'dim');
+  await tPrint('  Enter new access code to reconnect.', 'whi');
+  await tPrint('');
+  tInput.value = ''; tInput.focus();
+  T.phase = 'dead_login';
+}
+
+async function tStartChat() {
+  T.phase = 'chat';
+  T.rejects = 0;
+  DB.dead = false; saveDB();
+  T.vendorName = VENDOR_NAMES[Math.floor(Math.random() * VENDOR_NAMES.length)];
+  tInput.type = 'text'; tInput.placeholder = 'buy / pass';
+  tPrompt.textContent = '> ';
+  tOutput.innerHTML = '';
+  tSep();
+  await tPrint('  AUTHENTICATION SUCCESSFUL', 'dim');
+  await tPrint('  SECURE CHANNEL ESTABLISHED', 'dim');
+  tSep();
+  await tPrint('');
+  await tSleep(400);
+  await tPrint(`[${T.vendorName}]: ${GREETINGS[Math.floor(Math.random()*GREETINGS.length)]}`, 'whi');
+  await tSleep(500);
+  tHint('COMMANDS: "buy" to purchase  |  "pass" to reject (+5% cashback)');
+  await tPrint('');
+  await tOfferItem();
+}
+
+async function tOfferItem() {
+  if (T.phase !== 'chat') return;
+  const item = pickItemByRarity();
+  T.currentItem = item;
+  await tSleep(400);
+  await tPrint(`[${T.vendorName}]: ${PITCHES[Math.floor(Math.random()*PITCHES.length)]}`, 'whi');
+  await tSleep(150);
+  tPrintItem(item);
+  await tSleep(150);
+  await tPrint(`[${T.vendorName}]: good price. you in?`, 'whi');
+  refreshHeaderMoney();
+}
+
+async function tHandlePass() {
+  playSfx('binary');
+  const cashback = Math.round(T.currentItem.price * 0.05 * 100) / 100;
+  DB.money = Math.round((DB.money + cashback) * 100) / 100;
+  T.rejects++;
+  saveDB();
+  const resp = REJECTS[Math.min(T.rejects - 1, REJECTS.length - 1)];
+  await tPrint(`[${T.vendorName}]: ${resp}`, 'dim');
+  await tPrint(`  [SYS] 5% cashback: +$${cashback.toFixed(2)} — wallet: $${DB.money.toFixed(2)}`, 'dim');
+  await tPrint('');
+  if (T.rejects >= 10) {
+    await tCrash('EXCESSIVE REJECTIONS — TRACE INITIATED');
+  } else {
+    await tOfferItem();
   }
+}
 
-  function showApp() {
-    el.loginView.classList.add('hidden');
-    el.appView.classList.remove('hidden');
-    el.commandBar.classList.remove('hidden');
-  }
+async function tHandleBuy() {
 
-  function updateButtons() {
-    const enabled = STATE.phase === 'chat' && !STATE.busy && !!STATE.currentItem;
-    el.buyBtn.disabled = !enabled;
-    el.passBtn.disabled = !enabled;
-  }
+  // Trigger shutdown audio immediately when BUY is pressed
+  stopSfx('welcome');
+  playSfx('glitch');
+  playSfx('money');
 
-  function nextVendor() {
-    STATE.vendor = VENDOR_NAMES[Math.floor(Math.random() * VENDOR_NAMES.length)];
-  }
+  // Save item to inventory BEFORE crash
+  const itemToSave = { ...T.currentItem, boughtAt: T.currentItem.price, acquiredTime: Date.now(), id: Date.now() + Math.random() };
+  DB.inventory.push(itemToSave);
+  saveDB();
+  await tPrint(`[${T.vendorName}]: ${BUYS[Math.floor(Math.random()*BUYS.length)]}`, 'yel');
+  await tSleep(300);
+  await tPrint(`  [SYS] ${T.currentItem.name} → VAULT`, 'yel');
+  await tSleep(300);
+  await tPrint('  [SYS] Transfer complete. Check inventory.', 'dim');
+  await tSleep(300);
+  await tCrash('TRANSACTION ANOMALY — VAC DETECTED');
+}
 
-  function greetVendor() {
-    if (!STATE.vendor) nextVendor();
-    bubble(`[${STATE.vendor}]: ${GREETINGS[Math.floor(Math.random() * GREETINGS.length)]}`, 'vendor');
-    printHint('commands: "buy" to purchase • "pass" to decline • "inv" to view inventory • "sell <n|last|id>" to sell');
-  }
+async function tCrash(reason) {
+  T.phase = 'dead';
+  tInput.disabled = true;
+  await tSleep(150);
+  tSep();
+  await tPrint(`  [!] ${reason}`, 'red');
+  await tSleep(250);
+  await tPrint('  [!] INITIATING SECURE WIPE PROTOCOL', 'red');
+  await tSleep(200);
+  await tPrint('  [!] CHANNEL COMPROMISED', 'red');
+  const termEl = document.getElementById('pane-terminal');
+  await tSleep(300);
+  termEl.classList.add('glitching'); await tSleep(550); termEl.classList.remove('glitching');
+  await tSleep(80);
+  termEl.classList.add('glitching'); await tSleep(350); termEl.classList.remove('glitching');
+  const garbage = ['ERR_MEMORY_FAULT_0x8F3A','STACK OVERFLOW AT 0xDEADBEEF','NULL PTR','DISK WIPE: 18%','DISK WIPE: 64%','DISK WIPE: 99%','>> KEYS ROTATED <<','CONN DROPPED.'];
+  for (const g of garbage) { await tPrint('  ' + g, 'red'); await tSleep(100); }
+  termEl.classList.add('glitching'); await tSleep(700); termEl.classList.remove('glitching');
+  termEl.classList.add('dying'); await tSleep(1400);
+  stopSfx('welcome');
+  playSfx('glitch');
+  // Rotate session
+  DB.sessionId = newSessionId();
+  DB.dead = true;
+  saveDB();
+  T.rejects = 0; T.currentItem = null;
+  termEl.classList.remove('dying');
+  termEl.style.opacity = 1;
+  tInput.disabled = false;
+  await playVHSCrash();
+await tShowDeadLogin();
+}
 
-  async function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
+tInput.addEventListener('keydown', async e => {
+  if (e.key !== 'Enter') return;
+  const val = tInput.value.trim(); tInput.value = '';
+  playSfx('typing');
+  const phase = T.phase;
+  if (phase === 'login' || phase === 'dead_login') {
 
-  async function offerItem() {
-    if (STATE.phase !== 'chat') return;
-    STATE.currentItem = pickItem();
-    syncHeader();
-    updateOfferPanel(STATE.currentItem);
-
-    bubble(`[${STATE.vendor}]: ${PITCH_INTROS[Math.floor(Math.random() * PITCH_INTROS.length)]}`, 'vendor');
-    await sleep(160);
-    printItem(STATE.currentItem);
-    await sleep(120);
-    bubble(`[${STATE.vendor}]: price is live. your call.`, 'vendor');
-    updateButtons();
-  }
-
-  function addToInventory(item) {
-    updateStore((draft) => {
-      draft.inventory = Array.isArray(draft.inventory) ? draft.inventory : [];
-      draft.inventory.push({
-        name: item.name,
-        rarity: item.rarity,
-        wear: item.wear,
-        price: round2(item.price),
-        float: String(item.float),
-        boughtAt: round2(item.price),
-        acquiredTime: Date.now(),
-        id: makeId(),
-      });
-      return draft;
-    });
-  }
-
-  function removeInventoryItem(index) {
-    let removed = null;
-    const updated = updateStore((draft) => {
-      draft.inventory = Array.isArray(draft.inventory) ? draft.inventory : [];
-      if (index < 0 || index >= draft.inventory.length) return draft;
-      removed = draft.inventory.splice(index, 1)[0];
-      const base = Number(removed?.boughtAt ?? removed?.price ?? 0);
-      const payout = round2(base * SELL_RATE);
-      draft.money = round2(Number(draft.money || 0) + payout);
-      return draft;
-    });
-    return { removed, updated };
-  }
-
-  function parseSellTarget(arg, inventory) {
-    const token = String(arg || '').trim().toLowerCase();
-    if (!token || token === 'last') return inventory.length - 1;
-    if (/^\d+$/.test(token)) return Number(token) - 1;
-
-    const found = inventory.findIndex((item) => String(item.id || '').toLowerCase().startsWith(token));
-    return found;
-  }
-
-  function showInventory() {
-    const store = readStore() || defaultStore();
-    printSep();
-    printLine(`INVENTORY (${store.inventory.length})`, 'big');
-    if (!store.inventory.length) {
-      printLine('Inventory empty.', 'dim');
-      return;
-    }
-
-    store.inventory.forEach((item, idx) => {
-      const cost = money(item.boughtAt ?? item.price ?? 0);
-      printLine(
-        `${idx + 1}. ${item.name} | ${item.wear} | ${cost} | ${String(item.id).slice(-6)}`,
-        'white'
-      );
-    });
-  }
-
-  function pickRejectResponse() {
-    const idx = Math.min(STATE.rejects, REJECT_RESPONSES.length - 1);
-    return REJECT_RESPONSES[idx];
-  }
-
-  async function handleReject() {
-    if (STATE.phase !== 'chat' || STATE.busy || !STATE.currentItem) return;
-
-    STATE.busy = true;
-    updateButtons();
-
-    const bonus = round2(STATE.currentItem.price * 0.05);
-    const updated = updateStore((draft) => {
-      draft.money = round2(Number(draft.money || 0) + bonus);
-      return draft;
-    });
-
-    STATE.rejects += 1;
-    syncHeader();
-    updateOfferPanel(STATE.currentItem);
-
-    bubble(`[${STATE.vendor}]: ${pickRejectResponse()}`, 'system');
-    bubble(`[SYS]: +${money(bonus)} credited • balance ${money(updated.money)}`, 'system');
-
-    await sleep(180);
-
-    if (STATE.rejects >= REJECT_LIMIT) {
-      STATE.rejects = 0;
-      nextVendor();
-      bubble('[SYS]: negotiation window expired. re-routing...', 'warn');
-      await sleep(180);
-    }
-
-    STATE.busy = false;
-    updateButtons();
-    await sleep(220);
-    await offerItem();
-  }
-
-  async function handleBuy() {
-    if (STATE.phase !== 'chat' || STATE.busy || !STATE.currentItem) return;
-
-    STATE.busy = true;
-    updateButtons();
-
-    const item = STATE.currentItem;
-    const store = readStore() || defaultStore();
-    const currentMoney = round2(store.money);
-
-    if (currentMoney < item.price) {
-      bubble('[SYS]: insufficient funds.', 'warn');
-      STATE.busy = false;
-      updateButtons();
-      return;
-    }
-
-    updateStore((draft) => {
-      draft.money = round2(Number(draft.money || 0) - item.price);
-      draft.inventory = Array.isArray(draft.inventory) ? draft.inventory : [];
-      draft.inventory.push({
-        name: item.name,
-        rarity: item.rarity,
-        wear: item.wear,
-        price: round2(item.price),
-        float: String(item.float),
-        boughtAt: round2(item.price),
-        acquiredTime: Date.now(),
-        id: makeId(),
-      });
-      return draft;
-    });
-
-    syncHeader();
-    updateOfferPanel(item);
-
-    bubble(`[${STATE.vendor}]: ${BUY_RESPONSES[Math.floor(Math.random() * BUY_RESPONSES.length)]}`, 'vendor');
-    bubble(`[SYS]: -${money(item.price)} deducted • inventory updated`, 'system');
-    bubble(`[SYS]: ${item.name} secured to vault.`, 'system');
-
-    STATE.currentItem = null;
-    STATE.busy = false;
-    updateButtons();
-
-    await sleep(180);
-    await offerItem();
-  }
-
-  function handleSellCommand(raw) {
-    const store = readStore() || defaultStore();
-    const arg = String(raw || '').trim().slice(4).trim();
-    const idx = parseSellTarget(arg, store.inventory);
-
-    if (!store.inventory.length) {
-      bubble('[SYS]: inventory is empty.', 'warn');
-      return;
-    }
-
-    if (idx < 0 || idx >= store.inventory.length) {
-      bubble('[SYS]: item not found. use inv first.', 'warn');
-      return;
-    }
-
-    const item = store.inventory[idx];
-    const payout = round2(Number(item.boughtAt ?? item.price ?? 0) * SELL_RATE);
-    removeInventoryItem(idx);
-    syncHeader();
-
-    bubble(`[SYS]: sold ${item.name} for ${money(payout)}.`, 'system');
-  }
-
-  function commandAttempt() {
-    const raw = el.cmdInput.value.trim();
-    el.cmdInput.value = '';
-    if (!raw) return;
-
-    if (STATE.phase !== 'chat') {
-      if (raw === STATE.correctPassword) {
-        startChat();
-      } else {
-        printLine('ACCESS DENIED.', 'red');
+    if(val.toUpperCase()==='TESTMODE'){
+      if(!DB.testMode){
+        DB.originalState = JSON.parse(JSON.stringify(DB));
+        DB.testMode = true;
+        DB.money = 9999;
+        DB.inventory=[];
+        DB.kgHistory=[];
+        playSfx('test');
+        await tPrint('  [TESTMODE ENABLED] +$9999','yel');
+        await tPrint('  SAVE SYNC DISABLED // REFRESH RESTORES REAL PROFILE','dim');
       }
       return;
     }
 
-    const cmd = raw.toLowerCase();
-
-    if (cmd === 'buy' || cmd === 'accept') {
-      handleBuy();
-      return;
-    }
-
-    if (cmd === 'pass' || cmd === 'reject' || cmd === 'no' || cmd === 'skip' || cmd === 'decline') {
-      handleReject();
-      return;
-    }
-
-    if (cmd === 'inv' || cmd === 'inventory') {
-      showInventory();
-      return;
-    }
-
-    if (cmd.startsWith('sell')) {
-      handleSellCommand(raw);
-      return;
-    }
-
-    printLine('[SYS] unknown command. use "buy", "pass", "inv", or "sell".', 'dim');
+    const correct = derivePassword(DB.sessionId);
+    if (val === correct) { playSfx('success'); playSfx('welcome'); await tStartChat(); }
+    else { playSfx('error'); await tPrint('  ACCESS DENIED. Incorrect code.', 'red'); await tPrint(''); }
+    return;
   }
+  if (phase === 'chat') {
+    const cmd = val.toLowerCase();
+    if (cmd === 'buy') { await tHandleBuy(); }
+    else if (['pass','reject','no','skip','nah','n'].includes(cmd)) { await tHandlePass(); }
 
-  async function startChat() {
-    updateStore((draft) => {
-      draft.dead = false;
-      return draft;
-    });
-
-    showApp();
-    el.screen.innerHTML = '';
-    el.cmdInput.type = 'text';
-    el.cmdInput.placeholder = 'buy / pass / inv / sell';
-    el.promptLabel.textContent = '> ';
-    el.loginInput.value = '';
-
-    STATE.phase = 'chat';
-    STATE.busy = false;
-    STATE.rejects = 0;
-    STATE.currentItem = null;
-    nextVendor();
-
-    syncHeader();
-    updateOfferPanel(null);
-    setPhase('chat');
-
-    bubble('[SYSTEM]: authentication successful', 'system');
-    bubble('[SYSTEM]: secure channel established', 'system');
-    printSep();
-
-    await sleep(220);
-    greetVendor();
-    await sleep(240);
-    await offerItem();
-    updateButtons();
-    el.cmdInput.focus();
+    else if (cmd !== '') { await tPrint('  [SYS] Unknown command. "buy" or "pass".', 'dim'); }
   }
+});
 
-  function loginAttempt() {
-    const typed = el.loginInput.value.trim();
-    el.loginInput.value = '';
-    if (!typed) return;
+// ════════════════════════════════════════════════════════
+// MARKET
+// ════════════════════════════════════════════════════════
+function renderMarket() {
+  // Ticker
+  const ticker = document.getElementById('mkt-ticker');
+  const tickHtml = ITEMS.map(item => {
+    const p = getItemPrice(item.name, item.basePrice);
+    const d = getItemDelta(item.name, item.basePrice);
+    const cls = d > 0 ? 'up' : d < 0 ? 'dn' : 'flat';
+    const sign = d > 0 ? '+' : '';
+    return `<span class="tick-item"><span class="tick-n">${item.name}</span><span class="tick-p">$${p.toFixed(2)}</span><span class="tick-d ${cls}">${sign}${d.toFixed(2)}</span></span>`;
+  }).join('');
+  ticker.innerHTML = tickHtml + tickHtml;
 
-    if (typed === STATE.correctPassword) {
-      startChat();
-    } else {
-      printLine('ACCESS DENIED. incorrect code.', 'red');
-    }
-  }
+  // Table
+  const tbody = document.getElementById('mkt-body');
+  tbody.innerHTML = ITEMS.map(item => {
+    const p = getItemPrice(item.name, item.basePrice);
+    const d = getItemDelta(item.name, item.basePrice);
+    const cls = d > 0.005 ? 'up' : d < -0.005 ? 'dn' : 'flat';
+    const sign = d >= 0 ? '+' : '';
+    return `<tr>
+      <td class="td-n">${item.name}</td>
+      <td class="txt-${item.rarity}" style="font-size:10px">${item.rarity.toUpperCase()}</td>
+      <td class="td-p">$${p.toFixed(2)}</td>
+      <td class="td-b">$${item.basePrice.toFixed(2)}</td>
+      <td class="td-d ${cls}">${sign}${d.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+}
 
-  function refreshFromStorage() {
-    const store = readStore() || defaultStore();
-
-    if (store.sessionId !== STATE.sessionId) {
-      STATE.sessionId = store.sessionId;
-      STATE.correctPassword = derivePassword(store.sessionId);
-      el.sessionDisplay.textContent = `SESSION: ${STATE.sessionId}`;
-      el.loginSession.textContent = STATE.sessionId;
-    }
-
-    if (STATE.phase !== 'chat') {
-      syncHeader();
-    }
-
-    el.moneyDisplay.textContent = round2(store.money).toFixed(2);
-    el.statusRight.textContent = `INVENTORY: ${store.inventory.length}`;
-
-    if (STATE.phase === 'chat' && STATE.currentItem) {
-      STATE.currentItem.price = getCurrentPrice(STATE.currentItem.name, STATE.currentItem.price);
-      updateOfferPanel(STATE.currentItem);
-    } else if (STATE.phase !== 'chat') {
-      updateOfferPanel(null);
-    }
-  }
-
-  function initLoginScreen() {
-    const store = bootStore();
-    STATE.sessionId = store.sessionId;
-    STATE.correctPassword = derivePassword(store.sessionId);
-    STATE.phase = 'login';
-    STATE.busy = false;
-    STATE.currentItem = null;
-    STATE.rejects = 0;
-
-    syncHeader();
-    showLoginScreen();
-    el.loginInput.focus();
-  }
-
-  el.loginInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') loginAttempt();
+// ════════════════════════════════════════════════════════
+// INVENTORY
+// ════════════════════════════════════════════════════════
+function renderInventory() {
+  checkDaily();
+  const inv = DB.inventory;
+  let totalValue = 0, totalPaid = 0;
+  inv.forEach(item => {
+    totalValue += getItemPrice(item.name, item.basePrice || item.boughtAt);
+    totalPaid += item.boughtAt;
   });
+  const pl = totalValue - totalPaid;
 
-  el.cmdInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') commandAttempt();
+  document.getElementById('s-items').textContent = inv.length;
+  document.getElementById('s-value').textContent = '$' + totalValue.toFixed(2);
+  const plEl = document.getElementById('s-pl');
+  plEl.textContent = (pl >= 0 ? '+' : '') + pl.toFixed(2);
+  plEl.className = 'val ' + (pl > 0.01 ? 'up' : pl < -0.01 ? 'dn' : '');
+
+  const grid = document.getElementById('inv-grid');
+  grid.innerHTML = '';
+
+  if (inv.length === 0) {
+    grid.innerHTML = '<div class="empty-grid"><span class="big">[EMPTY]</span><span style="font-size:11px;color:#1a3a18">Buy something from the terminal.</span></div>';
+    return;
+  }
+
+  inv.forEach((item, idx) => {
+    const base = item.basePrice || item.boughtAt;
+    const cur = getItemPrice(item.name, base);
+    const sdelta = getItemDelta(item.name, base);
+    const paid = item.boughtAt;
+    const pl2 = cur - paid;
+    const plCls = pl2 > 0.01 ? 'up' : pl2 < -0.01 ? 'dn' : 'flat';
+    const sdCls = sdelta > 0.005 ? 'up' : sdelta < -0.005 ? 'dn' : 'flat';
+    const sellPrice = Math.round(cur * 0.9 * 100) / 100;
+
+    const card = document.createElement('div');
+    card.className = 'item-card';
+    card.innerHTML = `
+      <div class="rarity-bar rc-${item.rarity}"></div>
+      <div class="ic-name">${item.name}</div>
+      <div class="ic-wear txt-${item.rarity}">[${item.rarity.toUpperCase()}] ${item.wear}</div>
+      <div class="ic-float">Float: ${item.float}</div>
+      <div class="ic-prices">
+        <div><div class="ic-cur">$${cur.toFixed(2)}</div><div class="ic-paid">paid $${paid.toFixed(2)}</div></div>
+        <div class="ic-delta ${plCls}">${pl2 >= 0 ? '+' : ''}${pl2.toFixed(2)}</div>
+      </div>
+      <div class="ic-sdelta ${sdCls}">5-min: ${sdelta >= 0 ? '+' : ''}${sdelta.toFixed(2)}</div>
+      <button class="btn green" style="width:100%;font-size:10px;padding:6px 0">SELL $${sellPrice.toFixed(2)}</button>
+    `;
+    card.querySelector('button').addEventListener('click', () => sellItem(idx, sellPrice));
+    grid.appendChild(card);
   });
+}
 
-  el.buyBtn.addEventListener('click', handleBuy);
-  el.passBtn.addEventListener('click', handleReject);
+function sellItem(idx, sellPrice) {
+  const item = DB.inventory[idx];
+  DB.inventory.splice(idx, 1);
+  DB.money = Math.round((DB.money + sellPrice) * 100) / 100;
+  playSfx('money');
+  saveDB();
+  renderInventory();
+  // Flash a message
+  const banner = document.getElementById('daily-banner');
+  const tmp = document.createElement('div');
+  tmp.className = 'daily-banner';
+  tmp.style.borderColor = '#1a5020';
+  tmp.innerHTML = `<span class="msg" style="color:var(--dim)">✓ Sold ${item.name} for $${sellPrice.toFixed(2)} (90% market rate)</span>`;
+  banner.parentNode.insertBefore(tmp, banner);
+  setTimeout(() => tmp.remove(), 3000);
+}
 
-  window.addEventListener('storage', (e) => {
-    if (e.key === STORE_KEY) refreshFromStorage();
-  });
+// ════════════════════════════════════════════════════════
+// DAILY BONUS
+// ════════════════════════════════════════════════════════
+function checkDaily() {
+  const now = Date.now();
+  const DAILY_MS = 24 * 60 * 60 * 1000;
+  const canClaim = (now - (DB.lastDaily || 0)) >= DAILY_MS;
+  const banner = document.getElementById('daily-banner');
+  banner.style.display = canClaim ? 'flex' : 'none';
+}
 
-  setInterval(() => {
-    refreshFromStorage();
-  }, 1200);
+document.getElementById('daily-btn').addEventListener('click', () => {
+  DB.money = Math.round((DB.money + 50) * 100) / 100;
+  DB.lastDaily = Date.now();
+  saveDB();
+  checkDaily();
+  refreshHeaderMoney();
+  document.getElementById('s-wallet').textContent = '$' + DB.money.toFixed(2);
+});
 
-  bootStore();
-  initLoginScreen();
-  refreshFromStorage();
-})();
+// ════════════════════════════════════════════════════════
+// KEYGEN
+// ════════════════════════════════════════════════════════
+function renderKgWallet() {
+  document.getElementById('kg-wallet').textContent = '$' + DB.money.toFixed(2);
+}
+
+function showKgResult(sessionId, password, success, cost, tier) {
+  const box = document.getElementById('kg-result');
+  box.innerHTML = `
+    <div class="rb-session">SESSION: ${sessionId} // ${tier}</div>
+    <div class="rb-pass ${success ? '' : 'locked'}">${success ? password : '????'}</div>
+    <div class="rb-cost">Deducted: -$${cost.toFixed(2)} // New balance: $${DB.money.toFixed(2)}</div>
+    <div class="rb-status ${success ? 'ok' : 'err'}">${success ? '✓ Valid passcode — enter this in the terminal.' : '✗ Bad decode. Try again or buy guaranteed.'}</div>
+  `;
+  if (success) {
+    // Scramble animation
+    const passEl = box.querySelector('.rb-pass');
+    let r = 0, total = 14;
+    const iv = setInterval(() => {
+      if (r >= total) { clearInterval(iv); passEl.textContent = password; return; }
+      passEl.textContent = Array.from({length:4}, (_,i) => r > (total*(i+1)/4) ? password[i] : Math.floor(Math.random()*10)).join('');
+      r++;
+    }, 55);
+  }
+}
+
+function kgPurchase(guaranteed) {
+  const cost = guaranteed ? 25 : 5;
+  const sidRaw = parseInt(document.getElementById('kg-sid-input').value);
+  if (!sidRaw || sidRaw < 1000 || sidRaw > 9999) {
+    document.getElementById('kg-result').innerHTML = '<div class="rb-status err">⚠ Invalid Session ID. Enter 4-digit number from terminal.</div>';
+    return;
+  }
+  if (DB.money < cost) {
+    document.getElementById('kg-result').innerHTML = `<div class="rb-status err">Insufficient funds. Need $${cost.toFixed(2)}, have $${DB.money.toFixed(2)}.</div>`;
+    return;
+  }
+  DB.money = Math.round((DB.money - cost) * 100) / 100;
+  playSfx('littleglitch');
+
+  const correct = derivePassword(sidRaw);
+  let success, password;
+  if (guaranteed) {
+    success = true; password = correct;
+  } else {
+    success = Math.random() < 0.20;
+    password = success ? correct : String(Math.floor(1000 + Math.random() * 8999));
+  }
+
+  const tier = guaranteed ? 'GUARANTEED' : 'GAMBLE';
+  // Add to history
+  DB.kgHistory = DB.kgHistory || [];
+  DB.kgHistory.unshift({ sessionId: sidRaw, password, success, cost, tier, time: new Date().toLocaleTimeString() });
+  saveDB();
+  renderKgWallet();
+  refreshHeaderMoney();
+  showKgResult(sidRaw, password, success, cost, tier);
+  renderKgHistory();
+}
+
+function renderKgHistory() {
+  const h = DB.kgHistory || [];
+  document.getElementById('kg-hist-count').textContent = `(${h.length})`;
+  const empty = document.getElementById('kg-hist-empty');
+  const table = document.getElementById('kg-hist-table');
+  if (h.length === 0) { empty.style.display = 'block'; table.style.display = 'none'; return; }
+  empty.style.display = 'none'; table.style.display = 'table';
+  document.getElementById('kg-hist-body').innerHTML = h.map(e => `<tr>
+    <td class="ht-sid">${e.sessionId}</td>
+    <td class="ht-pass ${e.success ? '' : 'locked'}">${e.password}</td>
+    <td style="font-size:10px;color:${e.success?'#00ff88':'var(--red)'}">${e.success?'✓ VALID':'✗ FAIL'} (${e.tier})</td>
+    <td class="ht-cost">$${e.cost.toFixed(2)}</td>
+    <td class="ht-time">${e.time}</td>
+  </tr>`).join('');
+}
+
+document.getElementById('kg-sure-btn').addEventListener('click', () => kgPurchase(true));
+document.getElementById('kg-gamble-btn').addEventListener('click', () => kgPurchase(false));
+document.getElementById('kg-autofill-btn').addEventListener('click', () => {
+  document.getElementById('kg-sid-input').value = DB.sessionId;
+  const btn = document.getElementById('kg-autofill-btn');
+  const orig = btn.textContent;
+  btn.textContent = '✓ FILLED';
+  setTimeout(() => btn.textContent = orig, 1200);
+});
+
+// ════════════════════════════════════════════════════════
+// CLOCK + TICKS
+// ════════════════════════════════════════════════════════
+function updateClock() {
+  document.getElementById('status-time').textContent = new Date().toLocaleTimeString();
+  // Market countdown
+  const secs = secsUntilNextSlot();
+  const m = Math.floor(secs / 60), s = secs % 60;
+  const cd = m + ':' + String(s).padStart(2,'0');
+  document.getElementById('mkt-countdown').textContent = cd;
+  document.getElementById('tab-mkt-tick').textContent = cd;
+}
+
+let lastSlot = currentSlot();
+function pollSlot() {
+  const s = currentSlot();
+  if (s !== lastSlot) {
+    lastSlot = s;
+    // Re-render market if visible
+    if (document.getElementById('pane-market').classList.contains('active')) renderMarket();
+    if (document.getElementById('pane-inventory').classList.contains('active')) renderInventory();
+  }
+}
+
+setInterval(updateClock, 1000);
+setInterval(pollSlot, 10000);
+updateClock();
+
+// ════════════════════════════════════════════════════════
+// BOOT
+// ════════════════════════════════════════════════════════
+loadDB();
+if(DB.testMode && DB.originalState){ DB = DB.originalState; }
+renderKgHistory();
+refreshHeaderMoney();
+checkDaily();
+if (DB.dead) { stopSfx('welcome'); playSfx('glitch'); tShowDeadLogin(); } else { tShowLogin(); }
+// Focus input on terminal tab click
+document.querySelector('[data-tab="terminal"]').addEventListener('click', () => {
+  setTimeout(() => tInput.focus(), 50);
+});
+
+async function playVHSCrash(){
+ const vhs=document.getElementById('vhsOverlay');
+ vhs.classList.add('active');
+ vhs.classList.add('glitchPhase');
+
+ if(SFX.glitch){
+   SFX.glitch.pause();
+   SFX.glitch.currentTime=0;
+ }
+
+ await tSleep(4000);
+ vhs.classList.remove('glitchPhase');
+
+ await tSleep(5000);
+
+ vhs.style.opacity='0';
+ await tSleep(1500);
+
+ vhs.classList.remove('active');
+ vhs.style.opacity='';
+}
+
 </script>
+
+<div id="vhsOverlay">
+  <div class="noise"></div>
+  <div class="scanlines"></div>
+  <div class="vhsText">NO SIGNAL</div>
+</div>
+
 </body>
 </html>
