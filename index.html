@@ -499,7 +499,7 @@ const SFX = {
 };
 SFX.typing.volume=0.12; SFX.tab.volume=0.35; SFX.money.volume=0.45;
 SFX.success.volume=0.4; SFX.error.volume=0.4; SFX.welcome.volume=0.35;
-SFX.glitch.volume=0.0; // MUTED on boot — only used during crash sequences now
+SFX.glitch.volume=0.5; // normal volume — plays during crash sequences, not on boot
 SFX.littleglitch.volume=0.35;
 SFX.welcome.loop=true;
 Object.values(SFX).forEach(s=>{s.preload='auto';try{s.load();}catch(e){}});
