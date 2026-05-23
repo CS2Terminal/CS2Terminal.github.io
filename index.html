@@ -8,7 +8,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&family=Teko:wght@500;600;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
   --g:#00ff41;--dim:#00aa2a;--red:#ff3333;--yel:#ffcc00;--org:#ff8800;
@@ -154,6 +154,136 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .txt-restricted{color:var(--c-restricted)}.txt-classified{color:var(--c-classified)}.txt-covert{color:var(--c-covert)}.txt-gold{color:var(--c-gold)}
 .sep-line{border:none;border-top:1px solid var(--brd);margin:14px 0}
 .price-sync-note{font-size:9px;color:var(--dim);text-align:right;margin-bottom:6px}
+
+/* ────────────────────────────────────
+   INTRO OVERLAY — boot sequence
+   ──────────────────────────────────── */
+#introOverlay{
+  position:fixed;inset:0;z-index:100000;
+  background:#000000;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Share Tech Mono',monospace;
+  overflow:hidden;
+  pointer-events:all;
+}
+#introOverlay::before{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px);
+  pointer-events:none;z-index:1;
+}
+#introOverlay::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.55) 100%);
+  pointer-events:none;z-index:2;
+}
+.intro-content{
+  position:relative;z-index:3;
+  text-align:center;
+  max-width:700px;
+  padding:20px;
+}
+.intro-ascii{
+  font-family:'VT323',monospace;
+  font-size:22px;
+  color:var(--g);
+  text-shadow:0 0 8px rgba(0,255,65,0.5),0 0 20px rgba(0,255,65,0.2);
+  line-height:1.15;
+  letter-spacing:2px;
+  white-space:pre;
+  opacity:0;
+  transform:translateY(8px);
+  transition:opacity .5s ease,transform .5s ease;
+  margin-bottom:24px;
+}
+.intro-ascii.show{
+  opacity:1;
+  transform:translateY(0);
+}
+.intro-line{
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;
+  letter-spacing:3px;
+  color:var(--dim);
+  margin:5px 0;
+  opacity:0;
+  transform:translateY(4px);
+  transition:opacity .25s ease,transform .25s ease;
+  text-transform:uppercase;
+}
+.intro-line.show{
+  opacity:1;
+  transform:translateY(0);
+}
+.intro-line.bright{
+  color:var(--g);
+  text-shadow:0 0 6px rgba(0,255,65,0.35);
+}
+.intro-line.warn{
+  color:var(--yel);
+}
+.intro-access{
+  font-family:'Teko','VT323',sans-serif;
+  font-size:34px;
+  letter-spacing:8px;
+  color:var(--g);
+  text-shadow:0 0 12px rgba(0,255,65,0.6),0 0 30px rgba(0,255,65,0.25);
+  margin-top:20px;
+  opacity:0;
+  transform:scale(0.92);
+  transition:opacity .35s ease,transform .35s ease;
+  text-transform:uppercase;
+}
+.intro-access.show{
+  opacity:1;
+  transform:scale(1);
+}
+.intro-progress{
+  width:200px;
+  height:3px;
+  background:#0a2a0a;
+  margin:10px auto 0;
+  position:relative;
+  overflow:hidden;
+  opacity:0;
+  transition:opacity .3s ease;
+}
+.intro-progress.show{
+  opacity:1;
+}
+.intro-progress-fill{
+  height:100%;
+  background:var(--g);
+  box-shadow:0 0 8px var(--g);
+  width:0%;
+  transition:width 1.2s cubic-bezier(.25,.46,.45,.94);
+}
+.intro-progress-fill.done{
+  width:100%;
+}
+/* Glitch shake for intro exit */
+.intro-glitch-out{
+  animation:introCrunch .4s ease forwards;
+}
+@keyframes introCrunch{
+  0%{filter:brightness(1);transform:scale(1)}
+  15%{filter:brightness(3) hue-rotate(30deg);transform:scale(1.04) translate(-4px,2px)}
+  30%{filter:brightness(0.6) hue-rotate(-20deg);transform:scale(0.97) translate(6px,-3px)}
+  50%{filter:brightness(2) saturate(3);transform:scale(1.02) translate(-2px,1px)}
+  70%{filter:brightness(0.3);transform:scale(0.95)}
+  85%{filter:brightness(2.5);transform:scale(1.01)}
+  100%{filter:brightness(1);transform:scale(1);opacity:0}
+}
+/* Blinking cursor for intro */
+.intro-cursor{
+  display:inline-block;
+  width:10px;
+  height:18px;
+  background:var(--g);
+  margin-left:3px;
+  vertical-align:middle;
+  animation:cursorBlink .55s step-end infinite;
+}
+@keyframes cursorBlink{0%,100%{opacity:1}50%{opacity:0}}
 /* VHS overlay */
 #vhsOverlay{position:fixed;inset:0;background:#7f7f7f;z-index:999999;opacity:0;pointer-events:none;transition:opacity 1.5s ease;overflow:hidden}
 #vhsOverlay.active{opacity:1}
@@ -170,6 +300,33 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 </style>
 </head>
 <body>
+
+<!-- ═══════════════════════════════════════════
+     INTRO OVERLAY — boot sequence
+     ═══════════════════════════════════════════ -->
+<div id="introOverlay">
+  <div class="intro-content" id="introContent">
+    <div class="intro-ascii" id="introAscii">
+  ██████╗███████╗██████╗
+  ██╔════╝██╔════╝╚════██╗
+  ██║     ███████╗ █████╔╝
+  ██║     ╚════██║██╔═══╝
+  ╚██████╗███████║███████╗
+   ╚═════╝╚══════╝╚══════╝
+
+   TRADE  VAULT
+    </div>
+    <div class="intro-progress" id="introProgress">
+      <div class="intro-progress-fill" id="introProgressFill"></div>
+    </div>
+    <div id="introLines"></div>
+    <div class="intro-access" id="introAccess">ACCESS GRANTED</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MAIN APP
+     ═══════════════════════════════════════════ -->
 <div id="app">
   <div class="titlebar">
     <div class="titlebar-dot"></div>
@@ -303,6 +460,7 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
   </div>
 </div>
 
+<!-- VHS Overlay — used for crash sequences -->
 <div id="vhsOverlay">
   <div class="noise"></div>
   <div class="scanlines"></div>
@@ -341,7 +499,8 @@ const SFX = {
 };
 SFX.typing.volume=0.12; SFX.tab.volume=0.35; SFX.money.volume=0.45;
 SFX.success.volume=0.4; SFX.error.volume=0.4; SFX.welcome.volume=0.35;
-SFX.glitch.volume=0.5; SFX.littleglitch.volume=0.35;
+SFX.glitch.volume=0.0; // MUTED on boot — only used during crash sequences now
+SFX.littleglitch.volume=0.35;
 SFX.welcome.loop=true;
 Object.values(SFX).forEach(s=>{s.preload='auto';try{s.load();}catch(e){}});
 
@@ -457,9 +616,6 @@ function allItems(){ return [...ITEMS, ...CUSTOM_ITEMS]; }
 
 // ════════════════════════════════════════════════════════
 // PRICE ENGINE
-// Seeded RNG used for computation; Firestore stores results
-// so every player online reads the SAME values in real-time.
-// Falls back to pure local RNG if Firestore is unreachable.
 // ════════════════════════════════════════════════════════
 function mulberry32(a){
   return function(){
@@ -492,19 +648,16 @@ function secsUntilNextSlot(){
   return Math.ceil(ms/1000);
 }
 
-// Live prices from Firestore — keyed by item name
 let LIVE_PRICES={};
 let LIVE_SLOT=0;
 let FB_CONNECTED=false;
 
-// Get current price: prefer Firestore live data, fall back to seeded RNG
 function getItemPrice(name,basePrice){
   const slot=currentSlot();
   if(LIVE_SLOT===slot && LIVE_PRICES[name]!==undefined) return LIVE_PRICES[name];
   return getItemPriceForSlot(name,basePrice,slot);
 }
 
-// Delta vs previous slot (prev always seeded — no need to store history)
 function getItemDelta(name,basePrice){
   const slot=currentSlot();
   const cur=getItemPrice(name,basePrice);
@@ -512,9 +665,6 @@ function getItemDelta(name,basePrice){
   return Math.round((cur-prev)*100)/100;
 }
 
-// Called when a new slot starts or Firestore has stale/no data.
-// Computes prices with seeded RNG and writes to Firestore.
-// All clients compute the SAME values, so last-write-wins = no conflict.
 async function maybeWritePrices(){
   const slot=currentSlot();
   const prices={};
@@ -524,7 +674,6 @@ async function maybeWritePrices(){
   try{
     await db.collection('cs2_vault').doc('prices').set({slot,prices,writtenAt:Date.now()});
   }catch(e){
-    // Firestore unavailable — use local computed prices as fallback
     LIVE_PRICES=prices;
     LIVE_SLOT=slot;
     updateFbStatusUI(false);
@@ -535,7 +684,6 @@ async function maybeWritePrices(){
 // FIREBASE LISTENERS
 // ════════════════════════════════════════════════════════
 function initFirestore(){
-  // ── Prices listener ──
   db.collection('cs2_vault').doc('prices').onSnapshot(snap=>{
     updateFbStatusUI(true);
     const data=snap.data();
@@ -543,19 +691,16 @@ function initFirestore(){
     if(data && data.slot===slot){
       LIVE_PRICES=data.prices||{};
       LIVE_SLOT=slot;
-      // Re-render live views
       if(document.getElementById('pane-market').classList.contains('active')) renderMarket();
       if(document.getElementById('pane-inventory').classList.contains('active')) renderInventory();
     } else {
-      // Stale or empty — we write the new slot
       maybeWritePrices();
     }
   }, ()=>{
     updateFbStatusUI(false);
-    maybeWritePrices(); // fallback
+    maybeWritePrices();
   });
 
-  // ── Custom items listener ──
   db.collection('cs2_vault').doc('custom_items').onSnapshot(snap=>{
     const data=snap.data();
     if(data && Array.isArray(data.items)){
@@ -569,7 +714,7 @@ function initFirestore(){
 function updateFbStatusUI(connected){
   FB_CONNECTED=connected;
   const statusEl1 = document.getElementById('fb-status');
-  const statusEl2 = document.getElementById('tools-fb-status'); // may be null now
+  const statusEl2 = document.getElementById('tools-fb-status');
   const statusEl3 = document.getElementById('sb-fb-status');
   if(statusEl1){
     statusEl1.textContent=connected?'🟢 FIRESTORE LIVE':'🔴 FIRESTORE OFFLINE';
@@ -625,9 +770,6 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     if(tab==='market') renderMarket();
     if(tab==='inventory') renderInventory();
     if(tab==='keygen') refreshHeaderMoney();
-    if(tab==='tools') {
-      // No extra rendering needed — the OOPS message is static
-    }
   });
 });
 
@@ -778,7 +920,6 @@ async function tHandleBuy(){
     await tOfferItem();
     return;
   }
-  // Deduct and save item BEFORE crash
   DB.money=Math.round((DB.money-price)*100)/100;
   const itemToSave={...T.currentItem,boughtAt:price,acquiredTime:Date.now(),id:Date.now()+Math.random()};
   DB.inventory.push(itemToSave);
@@ -1032,12 +1173,9 @@ document.getElementById('kg-autofill-btn').addEventListener('click',()=>{
 });
 
 // ════════════════════════════════════════════════════════
-// WEAPON EDITOR (unused now — kept for compatibility with Firestore listener)
+// WEAPON EDITOR (unused — kept for Firestore listener compat)
 // ════════════════════════════════════════════════════════
-function renderEditorList(){
-  // No DOM elements exist anymore, so just return
-  return;
-}
+function renderEditorList(){ return; }
 
 // ════════════════════════════════════════════════════════
 // CLOCK + SLOT POLL
@@ -1083,6 +1221,61 @@ async function playVHSCrash(){
 }
 
 // ════════════════════════════════════════════════════════
+// INTRO SEQUENCE
+// ════════════════════════════════════════════════════════
+async function runIntro(){
+  const overlay = document.getElementById('introOverlay');
+  const ascii = document.getElementById('introAscii');
+  const progress = document.getElementById('introProgress');
+  const progressFill = document.getElementById('introProgressFill');
+  const linesContainer = document.getElementById('introLines');
+  const access = document.getElementById('introAccess');
+  const content = document.getElementById('introContent');
+
+  // Phase 1: Fade in ASCII art
+  await tSleep(200);
+  ascii.classList.add('show');
+  await tSleep(600);
+
+  // Phase 2: Show progress bar + system lines
+  const sysLines = [
+    { text: 'INITIALIZING SECURE CHANNEL...', cls: 'intro-line' },
+    { text: 'FIREBASE UPLINK: ESTABLISHED', cls: 'intro-line bright' },
+    { text: 'ENCRYPTION PROTOCOL: AES-256', cls: 'intro-line' },
+    { text: 'SESSION HANDLER: ACTIVE', cls: 'intro-line bright' },
+  ];
+
+  progress.classList.add('show');
+  // Start the progress bar filling
+  setTimeout(() => { progressFill.classList.add('done'); }, 100);
+
+  for (let i = 0; i < sysLines.length; i++) {
+    const el = document.createElement('div');
+    el.className = sysLines[i].cls;
+    el.textContent = sysLines[i].text;
+    linesContainer.appendChild(el);
+    // Trigger reflow for animation
+    el.offsetHeight;
+    el.classList.add('show');
+    await tSleep(i === 0 ? 350 : 220);
+  }
+
+  // Wait for progress bar to finish
+  await tSleep(500);
+
+  // Phase 3: ACCESS GRANTED
+  access.classList.add('show');
+  await tSleep(600);
+
+  // Phase 4: Glitch out
+  overlay.classList.add('intro-glitch-out');
+  await tSleep(500);
+
+  // Phase 5: Remove overlay completely
+  overlay.style.display = 'none';
+}
+
+// ════════════════════════════════════════════════════════
 // BOOT
 // ════════════════════════════════════════════════════════
 loadDB();
@@ -1092,8 +1285,15 @@ refreshHeaderMoney();
 checkDaily();
 initFirestore();
 
-if(DB.dead){stopSfx('glitch');playSfx('glitch');tShowDeadLogin();}
-else{tShowLogin();}
+// Run intro first, then show terminal — NO glitch sound on boot
+runIntro().then(() => {
+  if(DB.dead){
+    stopSfx('glitch'); // just in case — but no playSfx here
+    tShowDeadLogin();
+  } else {
+    tShowLogin();
+  }
+});
 
 document.querySelector('[data-tab="terminal"]').addEventListener('click',()=>{
   setTimeout(()=>tInput.focus(),50);
