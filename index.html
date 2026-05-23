@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CS2 TRADE VAULT</title>
+<!-- Firebase compat — no ES module needed, exposes window.firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
@@ -16,13 +19,12 @@
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--g);font-family:'Share Tech Mono',monospace;font-size:13px}
 body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.13) 2px,rgba(0,0,0,0.13) 4px);pointer-events:none;z-index:9999}
 body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.65) 100%);pointer-events:none;z-index:9998}
-/* ── Layout ── */
 #app{display:flex;flex-direction:column;height:100vh}
 .titlebar{background:#030a04;border-bottom:1px solid var(--brd);padding:5px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0}
 .titlebar-dot{width:7px;height:7px;border-radius:50%;background:var(--dim);box-shadow:0 0 5px var(--g);animation:blink 2s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.25}}
 .titlebar-name{font-size:11px;letter-spacing:3px;color:var(--dim);text-transform:uppercase}
-.titlebar-right{margin-left:auto;font-size:9px;color:#1a4020}
+.titlebar-right{margin-left:auto;font-size:9px;color:#1a4020;display:flex;align-items:center;gap:14px}
 .tabbar{background:#040b05;border-bottom:1px solid var(--brd);display:flex;flex-shrink:0}
 .tab-btn{padding:9px 20px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#1a5020;background:none;border:none;border-right:1px solid var(--brd);cursor:pointer;transition:color .15s,background .15s;outline:none}
 .tab-btn:hover{color:var(--dim);background:rgba(0,255,65,0.03)}
@@ -31,17 +33,14 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .content-area{flex:1;overflow:hidden;position:relative}
 .tab-pane{position:absolute;inset:0;overflow-y:auto;display:none;scrollbar-width:thin;scrollbar-color:var(--dim) transparent}
 .tab-pane.active{display:flex;flex-direction:column}
-/* Terminal pane special */
 #pane-terminal{overflow:hidden}
 .terminal-output{flex:1;overflow-y:auto;padding:18px;scrollbar-width:thin;scrollbar-color:var(--dim) transparent}
 .terminal-input-bar{border-top:1px solid var(--brd);padding:9px 14px;display:flex;align-items:center;gap:8px;background:#030a04;flex-shrink:0}
 .t-prompt{color:var(--dim);white-space:nowrap;font-size:12px}
 #t-input{flex:1;background:transparent;border:none;outline:none;color:var(--g);font-family:'Share Tech Mono',monospace;font-size:13px;caret-color:var(--g)}
 #t-input::placeholder{color:#1a3a18}
-/* Status bar */
 .statusbar{background:#030a04;border-top:1px solid var(--brd);padding:4px 14px;display:flex;justify-content:space-between;font-size:9px;color:#1a4020;letter-spacing:1px;flex-shrink:0}
 .statusbar .live{color:var(--dim)}
-/* ── Terminal lines ── */
 .ln{line-height:1.65;margin-bottom:1px;animation:fi .08s ease}
 @keyframes fi{from{opacity:0}to{opacity:1}}
 .ln.dim{color:var(--dim);font-size:11px}.ln.red{color:var(--red)}.ln.yel{color:var(--yel)}.ln.whi{color:var(--text)}
@@ -49,16 +48,13 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .item-block{border:1px solid #112a14;padding:9px 12px;margin:6px 0;background:rgba(0,30,8,0.4)}
 .ib-name{color:var(--yel);font-size:14px}.ib-rar{font-size:10px;margin-bottom:3px}.ib-float{color:#555;font-size:10px}.ib-price{color:#00ff88;font-size:13px}
 .hint-box{border:1px dashed #112a14;padding:7px 11px;margin:5px 0;font-size:11px;color:#256a28}
-/* ── Generic page ── */
 .page{padding:18px;flex:1}
 .page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .section-title{font-size:10px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;border-left:2px solid var(--dim);padding-left:7px}
-/* ── Wallet strip ── */
 .wallet-strip{background:#040c06;border:1px solid var(--brd);padding:11px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .w-bal{font-family:'VT323',monospace;font-size:34px;color:var(--yel);line-height:1}
 .w-label{font-size:9px;color:var(--dim);letter-spacing:2px}
 .w-sub{font-size:9px;color:#1a4020;margin-top:2px}
-/* ── Daily claim ── */
 .daily-banner{background:rgba(0,60,15,0.5);border:1px solid #1a5a20;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .daily-banner .msg{font-size:11px;color:var(--g)}
 .btn{border:1px solid var(--dim);background:#030d06;color:var(--g);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;padding:7px 14px;cursor:pointer;transition:background .15s;outline:none;white-space:nowrap}
@@ -71,13 +67,11 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .btn.red:hover{background:#1a0505}
 .btn.yel{border-color:#aa8800;color:var(--yel)}
 .btn.yel:hover{background:#1a1000}
-/* ── Stats row ── */
 .stats-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .stat-box{border:1px solid var(--brd);background:#040c06;padding:9px 14px;flex:1;min-width:120px}
 .stat-box .lbl{font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase}
 .stat-box .val{font-family:'VT323',monospace;font-size:26px;color:var(--g);line-height:1.1}
 .stat-box .val.yel{color:var(--yel)}.stat-box .val.up{color:#00ff88}.stat-box .val.dn{color:var(--red)}
-/* ── Item grid ── */
 .item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:9px;margin-bottom:20px}
 .item-card{border:1px solid var(--brd);background:rgba(0,18,5,0.5);padding:11px;position:relative;transition:border-color .2s,background .2s}
 .item-card:hover{border-color:var(--dim);background:rgba(0,28,8,0.6)}
@@ -94,7 +88,6 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .ic-sdelta.up{color:#00ff88}.ic-sdelta.dn{color:var(--red)}
 .empty-grid{grid-column:1/-1;text-align:center;padding:50px 20px;color:#1a3a18}
 .empty-grid .big{font-family:'VT323',monospace;font-size:42px;display:block;margin-bottom:8px;color:#091a0a}
-/* ── Market table ── */
 .ticker-wrap{overflow:hidden;border:1px solid var(--brd);background:#030a04;padding:5px 0;margin-bottom:14px}
 .ticker-inner{display:flex;gap:36px;white-space:nowrap;animation:tick-scroll 60s linear infinite}
 @keyframes tick-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
@@ -108,7 +101,6 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .mkt-table tr:hover td{background:rgba(0,255,65,0.02)}
 .td-n{color:var(--yel)}.td-p{font-family:'VT323',monospace;font-size:17px;color:var(--g)}
 .td-b{color:#1e4020;font-size:10px}.td-d.up{color:#00ff88}.td-d.dn{color:var(--red)}.td-d.flat{color:#1a4020}
-/* ── Keygen ── */
 .kg-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
 .kg-card{border:1px solid var(--brd);padding:14px;background:rgba(0,18,5,0.5);transition:border-color .15s}
 .kg-card:hover{border-color:var(--dim)}
@@ -118,7 +110,8 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .input-row{display:flex;gap:8px;margin-bottom:14px}
 .input-wrap{flex:1;border:1px solid var(--brd);background:#030a04;padding:9px 12px;display:flex;align-items:center;gap:7px}
 .input-wrap label{font-size:10px;color:var(--dim);white-space:nowrap}
-.input-wrap input{flex:1;background:transparent;border:none;outline:none;color:var(--g);font-family:'Share Tech Mono',monospace;font-size:14px;caret-color:var(--g)}
+.input-wrap input,.input-wrap select{flex:1;background:transparent;border:none;outline:none;color:var(--g);font-family:'Share Tech Mono',monospace;font-size:13px;caret-color:var(--g)}
+.input-wrap select option{background:#030a04;color:var(--g)}
 .input-wrap input::placeholder{color:#1a3a18}
 .result-box{border:1px solid var(--brd);background:rgba(0,20,6,0.4);padding:14px 16px;margin-bottom:16px;min-height:72px}
 .rb-session{font-size:10px;color:var(--dim);margin-bottom:4px}
@@ -134,97 +127,71 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 .hist-table tr:last-child td{border-bottom:none}
 .ht-pass{font-family:'VT323',monospace;font-size:20px;color:var(--g);letter-spacing:3px}
 .ht-cost{color:var(--yel)}.ht-sid{color:var(--dim)}.ht-time{color:#1a3a18;font-size:10px}
-/* ── Glitch ── */
+/* ── Weapon Editor ── */
+.editor-form{border:1px solid var(--brd);background:rgba(0,18,5,0.4);padding:16px;margin-bottom:18px}
+.editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.editor-field{display:flex;flex-direction:column;gap:4px}
+.editor-field label{font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase}
+.editor-field input,.editor-field select{background:#030a04;border:1px solid var(--brd);color:var(--g);font-family:'Share Tech Mono',monospace;font-size:12px;padding:7px 10px;outline:none;width:100%}
+.editor-field input:focus,.editor-field select:focus{border-color:var(--dim)}
+.editor-field select option{background:#030a04}
+.editor-field.full{grid-column:1/-1}
+.custom-list{margin-top:6px}
+.custom-item-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-bottom:1px solid #081208;font-size:11px}
+.custom-item-row:last-child{border-bottom:none}
+.custom-item-row .cin{color:var(--yel)}
+.custom-item-row .cir{font-size:9px}
+.custom-item-row .cip{color:#00ff88;font-family:'VT323',monospace;font-size:16px}
+.fb-info-box{border:1px solid #0f3a18;background:rgba(0,30,8,0.4);padding:10px 14px;margin-bottom:16px;font-size:10px;color:var(--dim);line-height:1.8}
+.fb-info-box .highlight{color:var(--g)}
 @keyframes glitch{0%{transform:translate(0);filter:none}15%{transform:translate(-3px,1px);filter:hue-rotate(90deg)}30%{transform:translate(3px,-1px);filter:brightness(2)}45%{transform:translate(-2px,2px);filter:none}60%{transform:translate(2px,0);filter:hue-rotate(180deg)}75%{transform:translate(0,-1px);filter:brightness(0.4)}90%{transform:translate(-1px,1px);filter:none}100%{transform:translate(0);filter:none}}
 .glitching{animation:glitch .08s infinite}
 @keyframes fadeout{from{opacity:1}to{opacity:0}}
 .dying{animation:fadeout 1.4s ease forwards}
-/* rarity classes */
 .rc-consumer{background:var(--c-consumer)}.rc-industrial{background:var(--c-industrial)}.rc-milspec{background:var(--c-milspec)}
 .rc-restricted{background:var(--c-restricted)}.rc-classified{background:var(--c-classified)}.rc-covert{background:var(--c-covert)}.rc-gold{background:var(--c-gold)}
 .txt-consumer{color:var(--c-consumer)}.txt-industrial{color:var(--c-industrial)}.txt-milspec{color:var(--c-milspec)}
 .txt-restricted{color:var(--c-restricted)}.txt-classified{color:var(--c-classified)}.txt-covert{color:var(--c-covert)}.txt-gold{color:var(--c-gold)}
-/* misc */
 .sep-line{border:none;border-top:1px solid var(--brd);margin:14px 0}
-.price-sync-note{font-size:9px;color:#1a4020;text-align:right;margin-bottom:6px}
-
-#vhsOverlay{position:fixed;inset:0;background:#7f7f7f;z-index:999999;
-opacity:0;pointer-events:none;transition:opacity 1.5s ease;overflow:hidden;}
-#vhsOverlay.active{opacity:1;}
-.noise{position:absolute;inset:0;opacity:.25;
-background:repeating-radial-gradient(circle at center,
-rgba(255,255,255,.15)0px,
-rgba(255,255,255,0)3px,
-rgba(0,0,0,.1)6px);
-animation:noiseMove .08s infinite linear;}
-.scanlines{position:absolute;inset:0;
-background:repeating-linear-gradient(to bottom,
-transparent 0px,transparent 2px,
-rgba(0,0,0,.12)3px,rgba(0,0,0,.12)4px);}
-.vhsText{position:absolute;top:50%;left:50%;
-transform:translate(-50%,-50%);
-font-family:monospace;font-size:42px;letter-spacing:8px;
-color:white;text-shadow:2px 0 red,-2px 0 cyan;
-animation:flicker .15s infinite;}
+.price-sync-note{font-size:9px;color:var(--dim);text-align:right;margin-bottom:6px}
+/* VHS overlay */
+#vhsOverlay{position:fixed;inset:0;background:#7f7f7f;z-index:999999;opacity:0;pointer-events:none;transition:opacity 1.5s ease;overflow:hidden}
+#vhsOverlay.active{opacity:1}
+.noise{position:absolute;inset:0;opacity:.25;background:repeating-radial-gradient(circle at center,rgba(255,255,255,.15)0px,rgba(255,255,255,0)3px,rgba(0,0,0,.1)6px);animation:noiseMove .08s infinite linear}
+.scanlines{position:absolute;inset:0;background:repeating-linear-gradient(to bottom,transparent 0px,transparent 2px,rgba(0,0,0,.12)3px,rgba(0,0,0,.12)4px)}
+.vhsText{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:monospace;font-size:42px;letter-spacing:8px;color:white;text-shadow:2px 0 red,-2px 0 cyan;animation:flicker .15s infinite}
 @keyframes noiseMove{from{transform:translateY(0)}to{transform:translateY(15px)}}
 @keyframes flicker{0%{opacity:1}50%{opacity:.6}100%{opacity:1}}
-
-
-.glitchPhase .noise{animation:noiseMove .04s infinite linear;opacity:.55;}
-.glitchPhase{animation:screenBreak .2s infinite;}
-.glitchPhase::before{
-content:"";
-position:absolute;
-inset:0;
-background:repeating-linear-gradient(
-90deg,
-transparent 0px,
-transparent 40px,
-rgba(255,255,255,.4) 60px,
-transparent 90px
-);
-mix-blend-mode:overlay;
-animation:fragmentShift .18s infinite;
-}
-@keyframes fragmentShift{
-0%{transform:translateX(0) translateY(0)}
-25%{transform:translateX(-40px) translateY(8px)}
-50%{transform:translateX(50px) translateY(-10px)}
-75%{transform:translateX(-20px) translateY(4px)}
-100%{transform:translateX(0) translateY(0)}
-}
-@keyframes screenBreak{
-0%{filter:none}
-25%{filter:blur(2px)}
-50%{filter:contrast(2)}
-75%{filter:hue-rotate(20deg)}
-100%{filter:none}
-}
-
+.glitchPhase .noise{animation:noiseMove .04s infinite linear;opacity:.55}
+.glitchPhase{animation:screenBreak .2s infinite}
+.glitchPhase::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0px,transparent 40px,rgba(255,255,255,.4)60px,transparent 90px);mix-blend-mode:overlay;animation:fragmentShift .18s infinite}
+@keyframes fragmentShift{0%{transform:translateX(0) translateY(0)}25%{transform:translateX(-40px) translateY(8px)}50%{transform:translateX(50px) translateY(-10px)}75%{transform:translateX(-20px) translateY(4px)}100%{transform:translateX(0) translateY(0)}}
+@keyframes screenBreak{0%{filter:none}25%{filter:blur(2px)}50%{filter:contrast(2)}75%{filter:hue-rotate(20deg)}100%{filter:none}}
 </style>
 </head>
 <body>
 <div id="app">
-  <!-- Title bar -->
   <div class="titlebar">
     <div class="titlebar-dot"></div>
     <span class="titlebar-name">CS2 TRADE VAULT</span>
-    <span style="font-size:9px;color:#1a4020">v2.0 // ENCRYPTED</span>
-    <div class="titlebar-right">SESSION: <span id="hdr-session">----</span> &nbsp;|&nbsp; $<span id="hdr-money">0.00</span></div>
+    <span style="font-size:9px;color:#1a4020">v3.0 // FIREBASE SYNC</span>
+    <div class="titlebar-right">
+      <span id="fb-status" style="font-size:9px;color:#1a4020">⏳ CONNECTING...</span>
+      <span>SESSION: <span id="hdr-session">----</span> &nbsp;|&nbsp; $<span id="hdr-money">0.00</span></span>
+    </div>
   </div>
 
-  <!-- Tab bar -->
   <div class="tabbar">
     <button class="tab-btn active" data-tab="terminal">◈ TERMINAL</button>
     <button class="tab-btn" data-tab="market">◈ MARKET <span class="badge" id="tab-mkt-tick">5:00</span></button>
     <button class="tab-btn" data-tab="inventory">◈ INVENTORY <span class="badge" id="tab-inv-count">0</span></button>
     <button class="tab-btn" data-tab="keygen">◈ KEYGEN</button>
+    <button class="tab-btn" data-tab="tools">◈ TOOLS</button>
   </div>
 
-  <!-- Content area -->
   <div class="content-area">
 
-    <!-- ══════════════════ TERMINAL ══════════════════ -->
+    <!-- TERMINAL -->
     <div class="tab-pane active" id="pane-terminal">
       <div class="terminal-output" id="t-output"></div>
       <div class="terminal-input-bar">
@@ -233,13 +200,13 @@ animation:fragmentShift .18s infinite;
       </div>
     </div>
 
-    <!-- ══════════════════ MARKET ══════════════════ -->
+    <!-- MARKET -->
     <div class="tab-pane" id="pane-market">
       <div class="page">
-        <div class="price-sync-note" id="sync-note">🌐 PRICES GLOBALLY SYNCED — deterministic seed, same slot = same price worldwide</div>
+        <div class="price-sync-note" id="sync-note">Database sync enabled</div>
         <div class="ticker-wrap"><div class="ticker-inner" id="mkt-ticker"></div></div>
         <div class="page-head">
-          <div class="section-title">Live Market — All 68 Items</div>
+          <div class="section-title">Live Market</div>
           <div style="font-size:9px;color:#1a4020">Next tick: <span id="mkt-countdown" style="color:var(--dim)">--:--</span></div>
         </div>
         <table class="mkt-table">
@@ -249,22 +216,19 @@ animation:fragmentShift .18s infinite;
       </div>
     </div>
 
-    <!-- ══════════════════ INVENTORY ══════════════════ -->
+    <!-- INVENTORY -->
     <div class="tab-pane" id="pane-inventory">
       <div class="page">
-        <!-- Daily banner -->
         <div class="daily-banner" id="daily-banner" style="display:none">
           <span class="msg">📦 DAILY DROP AVAILABLE — $50.00 waiting for you</span>
           <button class="btn green" id="daily-btn">CLAIM $50</button>
         </div>
-
-        <div class="stats-row" id="inv-stats">
+        <div class="stats-row">
           <div class="stat-box"><div class="lbl">Items</div><div class="val" id="s-items">0</div></div>
           <div class="stat-box"><div class="lbl">Portfolio Value</div><div class="val yel" id="s-value">$0.00</div></div>
           <div class="stat-box"><div class="lbl">Total P / L</div><div class="val" id="s-pl">$0.00</div></div>
           <div class="stat-box"><div class="lbl">Wallet</div><div class="val yel" id="s-wallet">$0.00</div></div>
         </div>
-
         <div class="page-head">
           <div class="section-title">Acquired Items</div>
           <div style="font-size:9px;color:#1a4020">Sell fee: 10%</div>
@@ -273,7 +237,7 @@ animation:fragmentShift .18s infinite;
       </div>
     </div>
 
-    <!-- ══════════════════ KEYGEN ══════════════════ -->
+    <!-- KEYGEN -->
     <div class="tab-pane" id="pane-keygen">
       <div class="page">
         <div class="wallet-strip">
@@ -284,7 +248,6 @@ animation:fragmentShift .18s infinite;
           </div>
           <div style="font-size:24px;opacity:0.25">🔐</div>
         </div>
-
         <div class="section-title" style="margin-bottom:12px">Purchase Passcode</div>
         <div class="kg-options">
           <div class="kg-card">
@@ -300,7 +263,6 @@ animation:fragmentShift .18s infinite;
             <button class="btn yel" id="kg-gamble-btn">TRY LUCK</button>
           </div>
         </div>
-
         <div class="section-title" style="margin-bottom:10px">Target Session ID</div>
         <div class="input-row">
           <div class="input-wrap">
@@ -309,11 +271,7 @@ animation:fragmentShift .18s infinite;
           </div>
           <button class="btn" id="kg-autofill-btn">AUTO-FILL</button>
         </div>
-
-        <div class="result-box" id="kg-result">
-          <div class="rb-placeholder">// awaiting purchase...</div>
-        </div>
-
+        <div class="result-box" id="kg-result"><div class="rb-placeholder">// awaiting purchase...</div></div>
         <hr class="sep-line">
         <div class="page-head">
           <div class="section-title">Decode History</div>
@@ -327,116 +285,101 @@ animation:fragmentShift .18s infinite;
       </div>
     </div>
 
+    <!-- TOOLS -->
+    <div class="tab-pane" id="pane-tools">
+      <div class="page" style="display:flex;align-items:center;justify-content:center;height:100%;">
+        <div style="text-align:center;color:var(--dim);">
+          <span style="font-family:'VT323',monospace;font-size:48px;color:var(--red);display:block;letter-spacing:5px;text-shadow:0 0 15px rgba(255,0,0,0.4);">OOPS</span>
+          <span style="font-size:14px;color:var(--dim);display:block;margin-top:12px;letter-spacing:1px;">This page is only available to a developer, check back later!</span>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /content-area -->
 
-  <!-- Status bar -->
   <div class="statusbar">
-    <span>PRICE ENGINE: <span class="live">SEEDED GLOBAL</span> // TICK: 5min // ALGO: mulberry32×slot</span>
+    <span>FIREBASE: <span class="live" id="sb-fb-status">CONNECTING</span> // TICK: 5min // PROJECT: cs2-vault</span>
     <span id="status-time"></span>
   </div>
 </div>
 
+<div id="vhsOverlay">
+  <div class="noise"></div>
+  <div class="scanlines"></div>
+  <div class="vhsText">NO SIGNAL</div>
+</div>
+
 <script>
+// ════════════════════════════════════════════════════════
+// FIREBASE INIT
+// ════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyBuzeRbArLzD_F3b-Mu6erRczD3rZWvmwo",
+  authDomain: "cs2-vault.firebaseapp.com",
+  projectId: "cs2-vault",
+  storageBucket: "cs2-vault.firebasestorage.app",
+  messagingSenderId: "718497806342",
+  appId: "1:718497806342:web:3f4cbc41c67567125deb87"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
 // ════════════════════════════════════════════════════════
 // SOUND EFFECTS
 // ════════════════════════════════════════════════════════
 const SFX = {
-  typing: new Audio('typing.mp3'),
-  tab: new Audio('tab.mp3'),
-  money: new Audio('money.mp3'),
-  success: new Audio('success.mp3'),
-  error: new Audio('error.mp3'),
-  welcome: new Audio('welcome.mp3'),
-  glitch: new Audio('glitch.mp3'),
-  littleglitch: new Audio('littleglitch.mp3'),
-  test: new Audio('test.mp3'),
-  binary: new Audio('binary.mp3')
+  typing:      new Audio('typing.mp3'),
+  tab:         new Audio('tab.mp3'),
+  money:       new Audio('money.mp3'),
+  success:     new Audio('success.mp3'),
+  error:       new Audio('error.mp3'),
+  welcome:     new Audio('welcome.mp3'),
+  glitch:      new Audio('glitch.mp3'),
+  littleglitch:new Audio('littleglitch.mp3'),
+  test:        new Audio('test.mp3'),
+  binary:      new Audio('binary.mp3')
 };
-
-SFX.typing.volume = 0.12;
-SFX.tab.volume = 0.35;
-SFX.money.volume = 0.45;
-SFX.success.volume = 0.4;
-SFX.error.volume = 0.4;
-SFX.welcome.volume = 0.35;
-SFX.glitch.volume = 0.5;
-SFX.littleglitch.volume = 0.35;
-
-SFX.welcome.loop = true;
-
-Object.values(SFX).forEach(s=>{
-  s.preload='auto';
-  try{s.load();}catch(e){}
-});
+SFX.typing.volume=0.12; SFX.tab.volume=0.35; SFX.money.volume=0.45;
+SFX.success.volume=0.4; SFX.error.volume=0.4; SFX.welcome.volume=0.35;
+SFX.glitch.volume=0.5; SFX.littleglitch.volume=0.35;
+SFX.welcome.loop=true;
+Object.values(SFX).forEach(s=>{s.preload='auto';try{s.load();}catch(e){}});
 
 function playSfx(name){
-  const s = SFX[name];
-  if(!s) return;
-
+  const s=SFX[name]; if(!s) return;
   try{
-    if(name==='welcome'){
-      s.currentTime=0;
-      s.play();
-    } else {
-      const snd=s.cloneNode();
-      snd.volume=s.volume;
-      snd.play();
-    }
+    if(name==='welcome'){s.currentTime=0;s.play();}
+    else{const c=s.cloneNode();c.volume=s.volume;c.play();}
   }catch(e){}
 }
-
 function stopSfx(name){
-  const s = SFX[name];
-  if(!s) return;
-  try{
-    s.pause();
-    s.currentTime = 0;
-  }catch(e){}
+  const s=SFX[name]; if(!s) return;
+  try{s.pause();s.currentTime=0;}catch(e){}
 }
 
 // ════════════════════════════════════════════════════════
-// DATABASE
+// LOCAL DATABASE
 // ════════════════════════════════════════════════════════
-const STORE_KEY = 'cs2_vault_v2';
+const STORE_KEY='cs2_vault_v3';
+let DB={money:0,inventory:[],sessionId:null,dead:false,lastDaily:0,kgHistory:[],testMode:false,originalState:null};
 
-let DB = {
-  money: 0,
-  inventory: [],
-  sessionId: null,
-  dead: false,
-  lastDaily: 0,
-  kgHistory: [],
-  testMode:false,
-  originalState:null,
-};
-
-function loadDB() {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (raw) DB = { ...DB, ...JSON.parse(raw) };
-  } catch(e) {}
-  if (!DB.sessionId) {
-    DB.sessionId = newSessionId();
-    DB.dead = false;
-  }
+function loadDB(){
+  try{const r=localStorage.getItem(STORE_KEY);if(r) DB={...DB,...JSON.parse(r)};}catch(e){}
+  if(!DB.sessionId){DB.sessionId=newSessionId();DB.dead=false;}
   saveDB();
 }
-
-function saveDB() {
-  if(DB.testMode) { refreshHeaderMoney(); return; }
-  localStorage.setItem(STORE_KEY, JSON.stringify(DB));
+function saveDB(){
+  if(DB.testMode){refreshHeaderMoney();return;}
+  localStorage.setItem(STORE_KEY,JSON.stringify(DB));
   refreshHeaderMoney();
 }
-
-function newSessionId() { return Math.floor(1000 + Math.random() * 8999); }
-function derivePassword(sid) { return String((sid * 31 + 7) % 9999).padStart(4,'0'); }
+function newSessionId(){return Math.floor(1000+Math.random()*8999);}
+function derivePassword(sid){return String((sid*31+7)%9999).padStart(4,'0');}
 
 // ════════════════════════════════════════════════════════
-// ITEMS DATABASE — 68 ITEMS
+// ITEMS DATABASE — 68 BUILT-IN
 // ════════════════════════════════════════════════════════
-const ITEMS = [
-  // ── CONSUMER ────────────────────────────────────
+const ITEMS=[
   {name:"MP9 | Setting Sun",              rarity:"consumer",   wear:"Minimal Wear",   basePrice:0.89,  float:"0.1201"},
   {name:"Nova | Walnut",                  rarity:"consumer",   wear:"Field-Tested",   basePrice:0.55,  float:"0.3401"},
   {name:"Tec-9 | Brass",                  rarity:"consumer",   wear:"Well-Worn",      basePrice:0.72,  float:"0.4812"},
@@ -447,7 +390,6 @@ const ITEMS = [
   {name:"MP7 | Gunsmoke",                 rarity:"consumer",   wear:"Field-Tested",   basePrice:0.93,  float:"0.3201"},
   {name:"Sawed-Off | Origami",            rarity:"consumer",   wear:"Minimal Wear",   basePrice:1.10,  float:"0.1601"},
   {name:"G3SG1 | Brown Sand",             rarity:"consumer",   wear:"Battle-Scarred", basePrice:0.48,  float:"0.7201"},
-  // ── INDUSTRIAL ──────────────────────────────────
   {name:"SSG 08 | Abyss",                 rarity:"industrial", wear:"Minimal Wear",   basePrice:4.20,  float:"0.0981"},
   {name:"Dual Berettas | Cobalt Quartz",  rarity:"industrial", wear:"Field-Tested",   basePrice:5.80,  float:"0.2341"},
   {name:"SCAR-20 | Contractor",           rarity:"industrial", wear:"Minimal Wear",   basePrice:6.10,  float:"0.1412"},
@@ -456,7 +398,6 @@ const ITEMS = [
   {name:"CZ75-Auto | Tread Plate",        rarity:"industrial", wear:"Minimal Wear",   basePrice:4.80,  float:"0.1101"},
   {name:"P90 | Sand Spray",               rarity:"industrial", wear:"Field-Tested",   basePrice:9.80,  float:"0.2812"},
   {name:"Galil AR | Tornado",             rarity:"industrial", wear:"Factory New",    basePrice:6.60,  float:"0.0611"},
-  // ── MIL-SPEC ────────────────────────────────────
   {name:"FAMAS | Valence",                rarity:"milspec",    wear:"Minimal Wear",   basePrice:3.20,  float:"0.1301"},
   {name:"Five-SeveN | Monkey Business",   rarity:"milspec",    wear:"Factory New",    basePrice:6.80,  float:"0.0512"},
   {name:"AUG | Chameleon",                rarity:"milspec",    wear:"Factory New",    basePrice:5.60,  float:"0.0712"},
@@ -469,7 +410,6 @@ const ITEMS = [
   {name:"P2000 | Ocean Foam",             rarity:"milspec",    wear:"Factory New",    basePrice:19.50, float:"0.0512"},
   {name:"R8 Revolver | Crimson Web",      rarity:"milspec",    wear:"Field-Tested",   basePrice:11.20, float:"0.3101"},
   {name:"AUG | Aristocrat",               rarity:"milspec",    wear:"Factory New",    basePrice:16.40, float:"0.0412"},
-  // ── RESTRICTED ──────────────────────────────────
   {name:"MAC-10 | Neon Rider",            rarity:"restricted", wear:"Minimal Wear",   basePrice:14.00, float:"0.1122"},
   {name:"P250 | See Ya Later",            rarity:"restricted", wear:"Field-Tested",   basePrice:9.50,  float:"0.2801"},
   {name:"SG 553 | Cyrex",                 rarity:"restricted", wear:"Minimal Wear",   basePrice:11.20, float:"0.0933"},
@@ -480,7 +420,6 @@ const ITEMS = [
   {name:"Desert Eagle | Kumicho Dragon",  rarity:"restricted", wear:"Minimal Wear",   basePrice:48.00, float:"0.1001"},
   {name:"Glock-18 | Water Elemental",     rarity:"restricted", wear:"Factory New",    basePrice:62.00, float:"0.0412"},
   {name:"P250 | Asiimov",                 rarity:"restricted", wear:"Field-Tested",   basePrice:24.00, float:"0.3212"},
-  // ── CLASSIFIED ──────────────────────────────────
   {name:"AK-47 | Redline",                rarity:"classified", wear:"Field-Tested",   basePrice:24.50, float:"0.2341"},
   {name:"Desert Eagle | Blaze",           rarity:"classified", wear:"Factory New",    basePrice:412.00,float:"0.0071"},
   {name:"Glock-18 | Fade",                rarity:"classified", wear:"Factory New",    basePrice:380.00,float:"0.0214"},
@@ -491,7 +430,6 @@ const ITEMS = [
   {name:"Glock-18 | Neo-Noir",            rarity:"classified", wear:"Field-Tested",   basePrice:95.00, float:"0.2401"},
   {name:"M4A4 | In Living Color",         rarity:"classified", wear:"Minimal Wear",   basePrice:134.00,float:"0.1101"},
   {name:"USP-S | Monster Mashup",         rarity:"classified", wear:"Field-Tested",   basePrice:72.00, float:"0.2801"},
-  // ── COVERT ──────────────────────────────────────
   {name:"AWP | Asiimov",                  rarity:"covert",     wear:"Battle-Scarred", basePrice:67.00, float:"0.7812"},
   {name:"USP-S | Kill Confirmed",         rarity:"covert",     wear:"Minimal Wear",   basePrice:88.00, float:"0.0981"},
   {name:"M4A1-S | Knight",                rarity:"covert",     wear:"Field-Tested",   basePrice:156.00,float:"0.3211"},
@@ -502,7 +440,6 @@ const ITEMS = [
   {name:"M4A4 | Poseidon",                rarity:"covert",     wear:"Field-Tested",   basePrice:320.00,float:"0.2401"},
   {name:"USP-S | Printstream",            rarity:"covert",     wear:"Factory New",    basePrice:280.00,float:"0.0412"},
   {name:"AK-47 | Gold Arabesque",         rarity:"covert",     wear:"Factory New",    basePrice:620.00,float:"0.0212"},
-  // ── GOLD / KNIVES & GLOVES ──────────────────────
   {name:"M4A4 | Howl",                    rarity:"gold",       wear:"Minimal Wear",   basePrice:1840.00,float:"0.1102"},
   {name:"Karambit | Fade",                rarity:"gold",       wear:"Factory New",    basePrice:2100.00,float:"0.0322"},
   {name:"Butterfly Knife | Tiger Tooth",  rarity:"gold",       wear:"Factory New",    basePrice:1250.00,float:"0.0099"},
@@ -513,678 +450,654 @@ const ITEMS = [
   {name:"M9 Bayonet | Doppler",           rarity:"gold",       wear:"Factory New",    basePrice:980.00, float:"0.0312"},
 ];
 
+// Custom weapons from Firestore — starts empty, populated by onSnapshot
+let CUSTOM_ITEMS = [];
+
+function allItems(){ return [...ITEMS, ...CUSTOM_ITEMS]; }
+
 // ════════════════════════════════════════════════════════
-// PRICE ENGINE — seeded global, ±small moves per 5-min tick
+// PRICE ENGINE
+// Seeded RNG used for computation; Firestore stores results
+// so every player online reads the SAME values in real-time.
+// Falls back to pure local RNG if Firestore is unreachable.
 // ════════════════════════════════════════════════════════
-function mulberry32(a) {
-  return function() {
-    a |= 0; a = a + 0x6D2B79F5 | 0;
-    var t = Math.imul(a ^ a >>> 15, 1 | a);
-    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+function mulberry32(a){
+  return function(){
+    a|=0; a=a+0x6D2B79F5|0;
+    var t=Math.imul(a^a>>>15,1|a);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return((t^t>>>14)>>>0)/4294967296;
   };
 }
-
-function slotHash(name, slot) {
-  let h = (slot * 2654435761) | 0;
-  for (let i = 0; i < name.length; i++) h = Math.imul(h ^ name.charCodeAt(i), 16777619) | 0;
-  return h >>> 0;
+function slotHash(name,slot){
+  let h=(slot*2654435761)|0;
+  for(let i=0;i<name.length;i++) h=Math.imul(h^name.charCodeAt(i),16777619)|0;
+  return h>>>0;
 }
-
-function getItemPriceForSlot(name, basePrice, slot) {
-  // Walk 60 steps back from this slot — each step = small delta
-  // Same slot → same price for everyone (global sync)
-  const STEPS = 60;
-  let price = basePrice;
-  for (let i = 0; i < STEPS; i++) {
-    const rng = mulberry32(slotHash(name, slot - STEPS + i));
-    const r = rng();
-    // Delta: ±2.5% of base per step (small realistic moves)
-    const delta = (r - 0.5) * 0.05 * basePrice;
-    price = Math.max(basePrice * 0.35, price + delta);
+function getItemPriceForSlot(name,basePrice,slot){
+  const STEPS=60;
+  let price=basePrice;
+  for(let i=0;i<STEPS;i++){
+    const rng=mulberry32(slotHash(name,slot-STEPS+i));
+    const r=rng();
+    const delta=(r-0.5)*0.05*basePrice;
+    price=Math.max(basePrice*0.35,price+delta);
   }
-  return Math.round(price * 100) / 100;
+  return Math.round(price*100)/100;
 }
 
-function currentSlot() { return Math.floor(Date.now() / (5 * 60 * 1000)); }
-
-function getItemPrice(name, basePrice) {
-  return getItemPriceForSlot(name, basePrice, currentSlot());
+function currentSlot(){return Math.floor(Date.now()/(5*60*1000));}
+function secsUntilNextSlot(){
+  const ms=(5*60*1000)-(Date.now()%(5*60*1000));
+  return Math.ceil(ms/1000);
 }
 
-function getItemDelta(name, basePrice) {
-  const s = currentSlot();
-  const cur = getItemPriceForSlot(name, basePrice, s);
-  const prev = getItemPriceForSlot(name, basePrice, s - 1);
-  return Math.round((cur - prev) * 100) / 100;
+// Live prices from Firestore — keyed by item name
+let LIVE_PRICES={};
+let LIVE_SLOT=0;
+let FB_CONNECTED=false;
+
+// Get current price: prefer Firestore live data, fall back to seeded RNG
+function getItemPrice(name,basePrice){
+  const slot=currentSlot();
+  if(LIVE_SLOT===slot && LIVE_PRICES[name]!==undefined) return LIVE_PRICES[name];
+  return getItemPriceForSlot(name,basePrice,slot);
 }
 
-function secsUntilNextSlot() {
-  const ms = (5 * 60 * 1000) - (Date.now() % (5 * 60 * 1000));
-  return Math.ceil(ms / 1000);
+// Delta vs previous slot (prev always seeded — no need to store history)
+function getItemDelta(name,basePrice){
+  const slot=currentSlot();
+  const cur=getItemPrice(name,basePrice);
+  const prev=getItemPriceForSlot(name,basePrice,slot-1);
+  return Math.round((cur-prev)*100)/100;
+}
+
+// Called when a new slot starts or Firestore has stale/no data.
+// Computes prices with seeded RNG and writes to Firestore.
+// All clients compute the SAME values, so last-write-wins = no conflict.
+async function maybeWritePrices(){
+  const slot=currentSlot();
+  const prices={};
+  allItems().forEach(item=>{
+    prices[item.name]=getItemPriceForSlot(item.name,item.basePrice,slot);
+  });
+  try{
+    await db.collection('cs2_vault').doc('prices').set({slot,prices,writtenAt:Date.now()});
+  }catch(e){
+    // Firestore unavailable — use local computed prices as fallback
+    LIVE_PRICES=prices;
+    LIVE_SLOT=slot;
+    updateFbStatusUI(false);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// FIREBASE LISTENERS
+// ════════════════════════════════════════════════════════
+function initFirestore(){
+  // ── Prices listener ──
+  db.collection('cs2_vault').doc('prices').onSnapshot(snap=>{
+    updateFbStatusUI(true);
+    const data=snap.data();
+    const slot=currentSlot();
+    if(data && data.slot===slot){
+      LIVE_PRICES=data.prices||{};
+      LIVE_SLOT=slot;
+      // Re-render live views
+      if(document.getElementById('pane-market').classList.contains('active')) renderMarket();
+      if(document.getElementById('pane-inventory').classList.contains('active')) renderInventory();
+    } else {
+      // Stale or empty — we write the new slot
+      maybeWritePrices();
+    }
+  }, ()=>{
+    updateFbStatusUI(false);
+    maybeWritePrices(); // fallback
+  });
+
+  // ── Custom items listener ──
+  db.collection('cs2_vault').doc('custom_items').onSnapshot(snap=>{
+    const data=snap.data();
+    if(data && Array.isArray(data.items)){
+      CUSTOM_ITEMS=data.items;
+      renderEditorList();
+      if(document.getElementById('pane-market').classList.contains('active')) renderMarket();
+    }
+  },()=>{});
+}
+
+function updateFbStatusUI(connected){
+  FB_CONNECTED=connected;
+  const statusEl1 = document.getElementById('fb-status');
+  const statusEl2 = document.getElementById('tools-fb-status'); // may be null now
+  const statusEl3 = document.getElementById('sb-fb-status');
+  if(statusEl1){
+    statusEl1.textContent=connected?'🟢 FIRESTORE LIVE':'🔴 FIRESTORE OFFLINE';
+    statusEl1.style.color=connected?'var(--dim)':'var(--red)';
+  }
+  if(statusEl2){
+    statusEl2.textContent=connected?'✓ connected — changes sync globally':'✗ offline — changes local only';
+    statusEl2.style.color=connected?'#00ff88':'var(--red)';
+  }
+  if(statusEl3){
+    statusEl3.textContent=connected?'LIVE':'OFFLINE (RNG FALLBACK)';
+    statusEl3.style.color=connected?'var(--g)':'var(--red)';
+  }
 }
 
 // ════════════════════════════════════════════════════════
 // RARITY WEIGHTS
 // ════════════════════════════════════════════════════════
-const RARITY_THRESHOLDS = [
-  [0.35,  'consumer'],
-  [0.60,  'industrial'],
-  [0.80,  'milspec'],
-  [0.90,  'restricted'],
-  [0.96,  'classified'],
-  [0.99,  'covert'],
-  [1.00,  'gold'],
-];
+const RARITY_THRESHOLDS=[[0.35,'consumer'],[0.60,'industrial'],[0.80,'milspec'],[0.90,'restricted'],[0.96,'classified'],[0.99,'covert'],[1.00,'gold']];
 
-function pickItemByRarity() {
-  const r = Math.random();
-  let rarity = 'consumer';
-  for (const [thresh, name] of RARITY_THRESHOLDS) {
-    if (r < thresh) { rarity = name; break; }
-  }
-  const pool = ITEMS.filter(i => i.rarity === rarity);
-  const base = pool[Math.floor(Math.random() * pool.length)];
-  return { ...base, price: getItemPrice(base.name, base.basePrice) };
+function pickItemByRarity(){
+  const r=Math.random();
+  let rarity='consumer';
+  for(const [thresh,name] of RARITY_THRESHOLDS){if(r<thresh){rarity=name;break;}}
+  const pool=allItems().filter(i=>i.rarity===rarity);
+  if(!pool.length) return pickItemByRarity();
+  const base=pool[Math.floor(Math.random()*pool.length)];
+  return{...base,price:getItemPrice(base.name,base.basePrice)};
 }
 
 // ════════════════════════════════════════════════════════
 // HEADER / COMMON
 // ════════════════════════════════════════════════════════
-function refreshHeaderMoney() {
-  document.getElementById('hdr-money').textContent = DB.money.toFixed(2);
-  document.getElementById('hdr-session').textContent = DB.sessionId || '----';
-  document.getElementById('s-wallet').textContent = '$' + DB.money.toFixed(2);
-  document.getElementById('kg-wallet').textContent = '$' + DB.money.toFixed(2);
-  document.getElementById('tab-inv-count').textContent = DB.inventory.length;
+function refreshHeaderMoney(){
+  document.getElementById('hdr-money').textContent=DB.money.toFixed(2);
+  document.getElementById('hdr-session').textContent=DB.sessionId||'----';
+  document.getElementById('s-wallet').textContent='$'+DB.money.toFixed(2);
+  document.getElementById('kg-wallet').textContent='$'+DB.money.toFixed(2);
+  document.getElementById('tab-inv-count').textContent=DB.inventory.length;
 }
 
 // ════════════════════════════════════════════════════════
 // TABS
 // ════════════════════════════════════════════════════════
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
     playSfx('tab');
-    const tab = btn.dataset.tab;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    const tab=btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');
-    document.getElementById('pane-' + tab).classList.add('active');
-    if (tab === 'market') renderMarket();
-    if (tab === 'inventory') renderInventory();
-    if (tab === 'keygen') renderKgWallet();
+    document.getElementById('pane-'+tab).classList.add('active');
+    if(tab==='market') renderMarket();
+    if(tab==='inventory') renderInventory();
+    if(tab==='keygen') refreshHeaderMoney();
+    if(tab==='tools') {
+      // No extra rendering needed — the OOPS message is static
+    }
   });
 });
 
 // ════════════════════════════════════════════════════════
 // TERMINAL
 // ════════════════════════════════════════════════════════
-let T = { phase: 'login', rejects: 0, currentItem: null, vendorName: '' };
-const VENDOR_NAMES = ["Aleksandr_V","ShadowBroker99","TradeKingRU","dark_merchant","xXSkinVaultXx","ByteRunner_01","QuantumTrader"];
-const GREETINGS = [
-  "yo. heard you were looking. i got something.",
-  "bro you actually came. okay. listen up.",
-  "dont tell anyone about this channel.",
-  "finally. been waiting. got fresh stock in.",
-  "new stuff just landed. you got timing.",
-  "quick session only. lets move.",
-];
-const PITCHES = ["check this out:","got this right now:","fresh drop:","one-time offer:","just pulled this:","straight from a case:","no questions asked:"];
-const REJECTS = [
-  "fine. your loss.",
-  "okay okay. hear me out on the next one.",
-  "bro really? that price is a steal.",
-  "whatever man. i got more.",
-  "lol okay. next one is better anyway.",
-  "not for everyone i guess.",
-  "fair. but youre missing out.",
-  "thats actually insane value but okay.",
-  "ok i see you. selective buyer. i respect.",
-  "last one i swear. this one's different.",
-];
-const BUYS = ["TRANSACTION CONFIRMED. sending now.","deal. encrypting transfer.","smart move. item is yours.","good call. processing."];
+let T={phase:'login',rejects:0,currentItem:null,vendorName:''};
+const VENDOR_NAMES=["Aleksandr_V","ShadowBroker99","TradeKingRU","dark_merchant","xXSkinVaultXx","ByteRunner_01","QuantumTrader"];
+const GREETINGS=["yo. heard you were looking. i got something.","bro you actually came. okay. listen up.","dont tell anyone about this channel.","finally. been waiting. got fresh stock in.","new stuff just landed. you got timing.","quick session only. lets move."];
+const PITCHES=["check this out:","got this right now:","fresh drop:","one-time offer:","just pulled this:","straight from a case:","no questions asked:"];
+const REJECTS=["fine. your loss.","okay okay. hear me out on the next one.","bro really? that price is a steal.","whatever man. i got more.","lol okay. next one is better anyway.","not for everyone i guess.","fair. but youre missing out.","thats actually insane value but okay.","ok i see you. selective buyer. i respect.","last one i swear. this one's different."];
+const BUYS=["TRANSACTION CONFIRMED. sending now.","deal. encrypting transfer.","smart move. item is yours.","good call. processing."];
 
-const tOutput = document.getElementById('t-output');
-const tInput  = document.getElementById('t-input');
-const tPrompt = document.getElementById('t-prompt');
+const tOutput=document.getElementById('t-output');
+const tInput=document.getElementById('t-input');
+const tPrompt=document.getElementById('t-prompt');
 
-function tPrint(text, cls='', delay=0) {
-  return new Promise(r => setTimeout(() => {
-    const d = document.createElement('div');
-    d.className = 'ln' + (cls ? ' '+cls : '');
-    d.textContent = text;
+function tPrint(text,cls='',delay=0){
+  return new Promise(r=>setTimeout(()=>{
+    const d=document.createElement('div');
+    d.className='ln'+(cls?' '+cls:'');
+    d.textContent=text;
     tOutput.appendChild(d);
-    tOutput.scrollTop = tOutput.scrollHeight;
+    tOutput.scrollTop=tOutput.scrollHeight;
     r();
-  }, delay));
+  },delay));
 }
-
-function tPrintItem(item) {
-  const d = document.createElement('div');
-  d.className = 'item-block';
-  d.innerHTML = `
-    <div class="ib-name">◆ ${item.name}</div>
-    <div class="ib-rar txt-${item.rarity}">[${item.rarity.toUpperCase()}] ${item.wear}</div>
-    <div class="ib-float">Float: ${item.float}</div>
-    <div class="ib-price">Market Price: $${item.price.toFixed(2)}</div>
-  `;
+function tPrintItem(item){
+  const d=document.createElement('div');
+  d.className='item-block';
+  d.innerHTML=`<div class="ib-name">◆ ${item.name}</div><div class="ib-rar txt-${item.rarity}">[${item.rarity.toUpperCase()}] ${item.wear}</div><div class="ib-float">Float: ${item.float}</div><div class="ib-price">Market Price: $${item.price.toFixed(2)}</div>`;
   tOutput.appendChild(d);
-  tOutput.scrollTop = tOutput.scrollHeight;
+  tOutput.scrollTop=tOutput.scrollHeight;
 }
-
-function tHint(text) {
-  const d = document.createElement('div');
-  d.className = 'hint-box';
-  d.textContent = text;
+function tHint(text){
+  const d=document.createElement('div');
+  d.className='hint-box';
+  d.textContent=text;
   tOutput.appendChild(d);
-  tOutput.scrollTop = tOutput.scrollHeight;
+  tOutput.scrollTop=tOutput.scrollHeight;
+}
+function tSep(){tPrint('────────────────────────────────────────────────','sep');}
+async function tSleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+async function tShowLogin(fresh=false){
+  tOutput.innerHTML='';
+  tInput.type='password'; tInput.placeholder='enter access code...'; tPrompt.textContent='PASS >';
+  await tPrint('  ██████╗███████╗██████╗     ████████╗███████╗██████╗ ███╗   ███╗','big');
+  await tPrint('  ██╔════╝██╔════╝╚════██╗    ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║','big');
+  await tPrint('  ██║     ███████╗ █████╔╝       ██║   █████╗  ██████╔╝██╔████╔██║','big');
+  await tPrint('  ██║     ╚════██║██╔═══╝        ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║','big');
+  await tPrint('  ╚██████╗███████║███████╗       ██║   ███████╗██║  ██║██║ ╚═╝ ██║','big');
+  await tPrint('   ╚═════╝╚══════╝╚══════╝       ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝','big');
+  await tPrint('');
+  tSep();
+  await tPrint(`  SESSION ID : ${DB.sessionId}`,'dim');
+  await tPrint('  STATUS     : AWAITING AUTHENTICATION','dim');
+  tSep();
+  await tPrint('');
+  await tPrint('  Enter your 4-digit access code.','whi');
+  if(fresh){await tPrint('  [!] Credentials rotated. Use new code.','red');}
+  await tPrint('');
+  tInput.value=''; tInput.focus();
+  stopSfx('glitch');
+  T.phase='login';
 }
 
-function tSep() { tPrint('────────────────────────────────────────────────', 'sep'); }
-async function tSleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-async function tShowLogin(fresh=false) {
-  tOutput.innerHTML = '';
-  tInput.type = 'password'; tInput.placeholder = 'enter access code...';
-  tPrompt.textContent = 'PASS >';
-  await tPrint('  ██████╗███████╗██████╗     ████████╗███████╗██████╗ ███╗   ███╗', 'big');
-  await tPrint('  ██╔════╝██╔════╝╚════██╗    ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║', 'big');
-  await tPrint('  ██║     ███████╗ █████╔╝       ██║   █████╗  ██████╔╝██╔████╔██║', 'big');
-  await tPrint('  ██║     ╚════██║██╔═══╝        ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║', 'big');
-  await tPrint('  ╚██████╗███████║███████╗       ██║   ███████╗██║  ██║██║ ╚═╝ ██║', 'big');
-  await tPrint('   ╚═════╝╚══════╝╚══════╝       ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝', 'big');
+async function tShowDeadLogin(){
+  tOutput.innerHTML='';
+  tInput.type='password'; tInput.placeholder='enter new access code...'; tPrompt.textContent='PASS >';
+  await tPrint('  ████████╗███████╗██████╗ ███╗   ███╗██╗███╗   ██╗ █████╗ ██╗','red');
+  await tPrint('  ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║██║████╗  ██║██╔══██╗██║','red');
+  await tPrint('     ██║   █████╗  ██████╔╝██╔████╔██║██║██╔██╗ ██║███████║██║','red');
+  await tPrint('     ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║██║██║╚██╗██║██╔══██║██║','red');
+  await tPrint('     ██║   ███████╗██║  ██║██║ ╚═╝ ██║██║██║ ╚████║██║  ██║███████╗','red');
+  await tPrint('     ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝','red');
   await tPrint('');
   tSep();
-  await tPrint(`  SESSION ID : ${DB.sessionId}`, 'dim');
-  await tPrint('  STATUS     : AWAITING AUTHENTICATION', 'dim');
+  await tPrint('  PREVIOUS SESSION TERMINATED','red');
+  await tPrint('  ALL CREDENTIALS ROTATED — NEW SESSION ACTIVE','red');
   tSep();
   await tPrint('');
-  await tPrint('  Enter your 4-digit access code.', 'whi');
-  if (fresh) { await tPrint('  [!] Credentials rotated. Use new code.', 'red'); }
+  await tPrint(`  NEW SESSION ID : ${DB.sessionId}`,'yel');
+  await tPrint('  Your wallet balance was preserved.','dim');
+  await tPrint('  Enter new access code to reconnect.','whi');
   await tPrint('');
-  tInput.value = ''; tInput.focus();
-  T.stopSfx('glitch');
-  phase = 'login';
+  tInput.value=''; tInput.focus();
+  T.phase='dead_login';
 }
 
-async function tShowDeadLogin() {
-  tOutput.innerHTML = '';
-  tInput.type = 'password'; tInput.placeholder = 'enter new access code...';
-  tPrompt.textContent = 'PASS >';
-  await tPrint('  ████████╗███████╗██████╗ ███╗   ███╗██╗███╗   ██╗ █████╗ ██╗', 'red');
-  await tPrint('  ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║██║████╗  ██║██╔══██╗██║', 'red');
-  await tPrint('     ██║   █████╗  ██████╔╝██╔████╔██║██║██╔██╗ ██║███████║██║', 'red');
-  await tPrint('     ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║██║██║╚██╗██║██╔══██║██║', 'red');
-  await tPrint('     ██║   ███████╗██║  ██║██║ ╚═╝ ██║██║██║ ╚████║██║  ██║███████╗', 'red');
-  await tPrint('     ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝', 'red');
-  await tPrint('');
+async function tStartChat(){
+  T.phase='chat'; T.rejects=0;
+  DB.dead=false; saveDB();
+  T.vendorName=VENDOR_NAMES[Math.floor(Math.random()*VENDOR_NAMES.length)];
+  tInput.type='text'; tInput.placeholder='buy / pass'; tPrompt.textContent='> ';
+  tOutput.innerHTML='';
   tSep();
-  await tPrint('  PREVIOUS SESSION TERMINATED', 'red');
-  await tPrint('  ALL CREDENTIALS ROTATED — NEW SESSION ACTIVE', 'red');
-  tSep();
-  await tPrint('');
-  await tPrint(`  NEW SESSION ID : ${DB.sessionId}`, 'yel');
-  await tPrint('  Your wallet balance was preserved.', 'dim');
-  await tPrint('  Enter new access code to reconnect.', 'whi');
-  await tPrint('');
-  tInput.value = ''; tInput.focus();
-  T.phase = 'dead_login';
-}
-
-async function tStartChat() {
-  T.phase = 'chat';
-  T.rejects = 0;
-  DB.dead = false; saveDB();
-  T.vendorName = VENDOR_NAMES[Math.floor(Math.random() * VENDOR_NAMES.length)];
-  tInput.type = 'text'; tInput.placeholder = 'buy / pass';
-  tPrompt.textContent = '> ';
-  tOutput.innerHTML = '';
-  tSep();
-  await tPrint('  AUTHENTICATION SUCCESSFUL', 'dim');
-  await tPrint('  SECURE CHANNEL ESTABLISHED', 'dim');
+  await tPrint('  AUTHENTICATION SUCCESSFUL','dim');
+  await tPrint('  SECURE CHANNEL ESTABLISHED','dim');
   tSep();
   await tPrint('');
   await tSleep(400);
-  await tPrint(`[${T.vendorName}]: ${GREETINGS[Math.floor(Math.random()*GREETINGS.length)]}`, 'whi');
+  await tPrint(`[${T.vendorName}]: ${GREETINGS[Math.floor(Math.random()*GREETINGS.length)]}`,'whi');
   await tSleep(500);
   tHint('COMMANDS: "buy" to purchase  |  "pass" to reject (+5% cashback)');
   await tPrint('');
   await tOfferItem();
 }
 
-async function tOfferItem() {
-  if (T.phase !== 'chat') return;
-  const item = pickItemByRarity();
-  T.currentItem = item;
+async function tOfferItem(){
+  if(T.phase!=='chat') return;
+  const item=pickItemByRarity();
+  T.currentItem=item;
   await tSleep(400);
-  await tPrint(`[${T.vendorName}]: ${PITCHES[Math.floor(Math.random()*PITCHES.length)]}`, 'whi');
+  await tPrint(`[${T.vendorName}]: ${PITCHES[Math.floor(Math.random()*PITCHES.length)]}`,'whi');
   await tSleep(150);
   tPrintItem(item);
   await tSleep(150);
-  await tPrint(`[${T.vendorName}]: good price. you in?`, 'whi');
+  await tPrint(`[${T.vendorName}]: good price. you in?`,'whi');
   refreshHeaderMoney();
 }
 
-async function tHandlePass() {
+async function tHandlePass(){
   playSfx('binary');
-  const cashback = Math.round(T.currentItem.price * 0.05 * 100) / 100;
-  DB.money = Math.round((DB.money + cashback) * 100) / 100;
+  const cashback=Math.round(T.currentItem.price*0.05*100)/100;
+  DB.money=Math.round((DB.money+cashback)*100)/100;
   T.rejects++;
   saveDB();
-  const resp = REJECTS[Math.min(T.rejects - 1, REJECTS.length - 1)];
-  await tPrint(`[${T.vendorName}]: ${resp}`, 'dim');
-  await tPrint(`  [SYS] 5% cashback: +$${cashback.toFixed(2)} — wallet: $${DB.money.toFixed(2)}`, 'dim');
+  const resp=REJECTS[Math.min(T.rejects-1,REJECTS.length-1)];
+  await tPrint(`[${T.vendorName}]: ${resp}`,'dim');
+  await tPrint(`  [SYS] 5% cashback: +$${cashback.toFixed(2)} — wallet: $${DB.money.toFixed(2)}`,'dim');
   await tPrint('');
-  if (T.rejects >= 10) {
-    await tCrash('EXCESSIVE REJECTIONS — TRACE INITIATED');
-  } else {
-    await tOfferItem();
-  }
+  if(T.rejects>=10){await tCrash('EXCESSIVE REJECTIONS — TRACE INITIATED');}
+  else{await tOfferItem();}
 }
 
-async function tHandleBuy() {
-
-  if (!T.currentItem) return;
-
-  // SFX
+async function tHandleBuy(){
+  if(!T.currentItem) return;
   stopSfx('welcome');
   playSfx('glitch');
   playSfx('money');
-
-  const price = T.currentItem.price;
-
-  // Safety check: enough money?
-  if (DB.money < price) {
+  const price=T.currentItem.price;
+  if(DB.money<price){
     playSfx('error');
-    await tPrint(' [SYS] INSUFFICIENT FUNDS — TRANSACTION REJECTED', 'red');
-    await tPrint(` [SYS] REQUIRED: $${price.toFixed(2)} | AVAILABLE: $${DB.money.toFixed(2)}`, 'dim');
+    await tPrint('  [SYS] INSUFFICIENT FUNDS — TRANSACTION REJECTED','red');
+    await tPrint(`  [SYS] REQUIRED: $${price.toFixed(2)} | AVAILABLE: $${DB.money.toFixed(2)}`,'dim');
     await tPrint('');
+    await tOfferItem();
     return;
   }
-
-  // Deduct money
-  DB.money = Math.round((DB.money - price) * 100) / 100;
-  saveDB();
-
-  // Save item to inventory
-  const itemToSave = {
-    ...T.currentItem,
-    boughtAt: price,
-    acquiredTime: Date.now(),
-    id: Date.now() + Math.random()
-  };
-
+  // Deduct and save item BEFORE crash
+  DB.money=Math.round((DB.money-price)*100)/100;
+  const itemToSave={...T.currentItem,boughtAt:price,acquiredTime:Date.now(),id:Date.now()+Math.random()};
   DB.inventory.push(itemToSave);
   saveDB();
-
-  // Terminal output
-  await tPrint(`[${T.vendorName}]: ${BUYS[Math.floor(Math.random() * BUYS.length)]}`, 'yel');
-  await tSleep(250);
-  await tPrint(` [SYS] ${T.currentItem.name} → VAULT STORAGE`, 'yel');
-  await tSleep(250);
-  await tPrint(` [SYS] -$${price.toFixed(2)} deducted`, 'dim');
-  await tSleep(250);
-  await tPrint(` [SYS] Wallet balance: $${DB.money.toFixed(2)}`, 'dim');
-  await tSleep(250);
-  await tPrint(' [SYS] Transfer complete. Inventory updated.', 'dim');
-
+  await tPrint(`[${T.vendorName}]: ${BUYS[Math.floor(Math.random()*BUYS.length)]}`,'yel');
   await tSleep(300);
-
-  // Crash sequence (keeps your original vibe)
-  await tCrash('TRANSACTION ANOMALY — VAC DETECTED');
+  await tPrint(`  [SYS] ${T.currentItem.name} → VAULT`,'yel');
+  await tSleep(300);
+  await tPrint('  [SYS] Transfer complete. Disconnecting...','dim');
+  await tSleep(300);
+  await tCrash('TRANSACTION ANOMALY — HONEYPOT DETECTED');
 }
 
-async function tCrash(reason) {
-  T.phase = 'dead';
-  tInput.disabled = true;
+async function tCrash(reason){
+  T.phase='dead';
+  tInput.disabled=true;
   await tSleep(150);
   tSep();
-  await tPrint(`  [!] ${reason}`, 'red');
+  await tPrint(`  [!] ${reason}`,'red');
   await tSleep(250);
-  await tPrint('  [!] INITIATING SECURE WIPE PROTOCOL', 'red');
+  await tPrint('  [!] INITIATING SECURE WIPE PROTOCOL','red');
   await tSleep(200);
-  await tPrint('  [!] CHANNEL COMPROMISED', 'red');
-  const termEl = document.getElementById('pane-terminal');
+  await tPrint('  [!] CHANNEL COMPROMISED','red');
+  const termEl=document.getElementById('pane-terminal');
   await tSleep(300);
   termEl.classList.add('glitching'); await tSleep(550); termEl.classList.remove('glitching');
   await tSleep(80);
   termEl.classList.add('glitching'); await tSleep(350); termEl.classList.remove('glitching');
-  const garbage = ['ERR_MEMORY_FAULT_0x8F3A','STACK OVERFLOW AT 0xDEADBEEF','NULL PTR','DISK WIPE: 18%','DISK WIPE: 64%','DISK WIPE: 99%','>> KEYS ROTATED <<','CONN DROPPED.'];
-  for (const g of garbage) { await tPrint('  ' + g, 'red'); await tSleep(100); }
+  const garbage=['ERR_MEMORY_FAULT_0x8F3A','STACK OVERFLOW AT 0xDEADBEEF','NULL PTR','DISK WIPE: 18%','DISK WIPE: 64%','DISK WIPE: 99%','>> KEYS ROTATED <<','CONN DROPPED.'];
+  for(const g of garbage){await tPrint('  '+g,'red');await tSleep(100);}
   termEl.classList.add('glitching'); await tSleep(700); termEl.classList.remove('glitching');
   termEl.classList.add('dying'); await tSleep(1400);
   stopSfx('welcome');
   playSfx('glitch');
-  // Rotate session
-  DB.sessionId = newSessionId();
-  DB.dead = true;
+  DB.sessionId=newSessionId();
+  DB.dead=true;
   saveDB();
-  T.rejects = 0; T.currentItem = null;
+  T.rejects=0; T.currentItem=null;
   termEl.classList.remove('dying');
-  termEl.style.opacity = 1;
-  tInput.disabled = false;
+  termEl.style.opacity=1;
+  tInput.disabled=false;
   await playVHSCrash();
-await tShowDeadLogin();
+  await tShowDeadLogin();
 }
 
-tInput.addEventListener('keydown', async e => {
-  if (e.key !== 'Enter') return;
-  const val = tInput.value.trim(); tInput.value = '';
+tInput.addEventListener('keydown',async e=>{
+  if(e.key!=='Enter') return;
+  const val=tInput.value.trim(); tInput.value='';
   playSfx('typing');
-  const phase = T.phase;
-  if (phase === 'login' || phase === 'dead_login') {
-
+  const phase=T.phase;
+  if(phase==='login'||phase==='dead_login'){
     if(val.toUpperCase()==='TESTMODE'){
       if(!DB.testMode){
-        DB.originalState = JSON.parse(JSON.stringify(DB));
-        DB.testMode = true;
-        DB.money = 9999;
-        DB.inventory=[];
-        DB.kgHistory=[];
+        DB.originalState=JSON.parse(JSON.stringify(DB));
+        DB.testMode=true; DB.money=9999; DB.inventory=[]; DB.kgHistory=[];
         playSfx('test');
         await tPrint('  [TESTMODE ENABLED] +$9999','yel');
         await tPrint('  SAVE SYNC DISABLED // REFRESH RESTORES REAL PROFILE','dim');
       }
       return;
     }
-
-    const correct = derivePassword(DB.sessionId);
-    if (val === correct) { playSfx('success'); playSfx('welcome'); await tStartChat(); }
-    else { playSfx('error'); await tPrint('  ACCESS DENIED. Incorrect code.', 'red'); await tPrint(''); }
+    const correct=derivePassword(DB.sessionId);
+    if(val===correct){playSfx('success');playSfx('welcome');await tStartChat();}
+    else{playSfx('error');await tPrint('  ACCESS DENIED. Incorrect code.','red');await tPrint('');}
     return;
   }
-  if (phase === 'chat') {
-    const cmd = val.toLowerCase();
-    if (cmd === 'buy') { await tHandleBuy(); }
-    else if (['pass','reject','no','skip','nah','n'].includes(cmd)) { await tHandlePass(); }
-
-    else if (cmd !== '') { await tPrint('  [SYS] Unknown command. "buy" or "pass".', 'dim'); }
+  if(phase==='chat'){
+    const cmd=val.toLowerCase();
+    if(cmd==='buy'){await tHandleBuy();}
+    else if(['pass','reject','no','skip','nah','n'].includes(cmd)){await tHandlePass();}
+    else if(cmd!==''){await tPrint('  [SYS] Unknown command. "buy" or "pass".','dim');}
   }
 });
 
 // ════════════════════════════════════════════════════════
 // MARKET
 // ════════════════════════════════════════════════════════
-function renderMarket() {
-  // Ticker
-  const ticker = document.getElementById('mkt-ticker');
-  const tickHtml = ITEMS.map(item => {
-    const p = getItemPrice(item.name, item.basePrice);
-    const d = getItemDelta(item.name, item.basePrice);
-    const cls = d > 0 ? 'up' : d < 0 ? 'dn' : 'flat';
-    const sign = d > 0 ? '+' : '';
+function renderMarket(){
+  const all=allItems();
+  const tickHtml=all.map(item=>{
+    const p=getItemPrice(item.name,item.basePrice);
+    const d=getItemDelta(item.name,item.basePrice);
+    const cls=d>0?'up':d<0?'dn':'flat';
+    const sign=d>0?'+':'';
     return `<span class="tick-item"><span class="tick-n">${item.name}</span><span class="tick-p">$${p.toFixed(2)}</span><span class="tick-d ${cls}">${sign}${d.toFixed(2)}</span></span>`;
   }).join('');
-  ticker.innerHTML = tickHtml + tickHtml;
+  document.getElementById('mkt-ticker').innerHTML=tickHtml+tickHtml;
 
-  // Table
-  const tbody = document.getElementById('mkt-body');
-  tbody.innerHTML = ITEMS.map(item => {
-    const p = getItemPrice(item.name, item.basePrice);
-    const d = getItemDelta(item.name, item.basePrice);
-    const cls = d > 0.005 ? 'up' : d < -0.005 ? 'dn' : 'flat';
-    const sign = d >= 0 ? '+' : '';
-    return `<tr>
-      <td class="td-n">${item.name}</td>
-      <td class="txt-${item.rarity}" style="font-size:10px">${item.rarity.toUpperCase()}</td>
-      <td class="td-p">$${p.toFixed(2)}</td>
-      <td class="td-b">$${item.basePrice.toFixed(2)}</td>
-      <td class="td-d ${cls}">${sign}${d.toFixed(2)}</td>
-    </tr>`;
+  document.getElementById('mkt-body').innerHTML=all.map(item=>{
+    const p=getItemPrice(item.name,item.basePrice);
+    const d=getItemDelta(item.name,item.basePrice);
+    const cls=d>0.005?'up':d<-0.005?'dn':'flat';
+    const sign=d>=0?'+':'';
+    return `<tr><td class="td-n">${item.name}${CUSTOM_ITEMS.includes(item)?'<span style="color:var(--dim);font-size:9px;margin-left:5px">[custom]</span>':''}</td><td class="txt-${item.rarity}" style="font-size:10px">${item.rarity.toUpperCase()}</td><td class="td-p">$${p.toFixed(2)}</td><td class="td-b">$${item.basePrice.toFixed(2)}</td><td class="td-d ${cls}">${sign}${d.toFixed(2)}</td></tr>`;
   }).join('');
 }
 
 // ════════════════════════════════════════════════════════
 // INVENTORY
 // ════════════════════════════════════════════════════════
-function renderInventory() {
+function renderInventory(){
   checkDaily();
-  const inv = DB.inventory;
-  let totalValue = 0, totalPaid = 0;
-  inv.forEach(item => {
-    totalValue += getItemPrice(item.name, item.basePrice || item.boughtAt);
-    totalPaid += item.boughtAt;
+  const inv=DB.inventory;
+  let totalValue=0,totalPaid=0;
+  inv.forEach(item=>{
+    totalValue+=getItemPrice(item.name,item.basePrice||item.boughtAt);
+    totalPaid+=item.boughtAt;
   });
-  const pl = totalValue - totalPaid;
-
-  document.getElementById('s-items').textContent = inv.length;
-  document.getElementById('s-value').textContent = '$' + totalValue.toFixed(2);
-  const plEl = document.getElementById('s-pl');
-  plEl.textContent = (pl >= 0 ? '+' : '') + pl.toFixed(2);
-  plEl.className = 'val ' + (pl > 0.01 ? 'up' : pl < -0.01 ? 'dn' : '');
-
-  const grid = document.getElementById('inv-grid');
-  grid.innerHTML = '';
-
-  if (inv.length === 0) {
-    grid.innerHTML = '<div class="empty-grid"><span class="big">[EMPTY]</span><span style="font-size:11px;color:#1a3a18">Buy something from the terminal.</span></div>';
+  const pl=totalValue-totalPaid;
+  document.getElementById('s-items').textContent=inv.length;
+  document.getElementById('s-value').textContent='$'+totalValue.toFixed(2);
+  const plEl=document.getElementById('s-pl');
+  plEl.textContent=(pl>=0?'+':'')+pl.toFixed(2);
+  plEl.className='val '+(pl>0.01?'up':pl<-0.01?'dn':'');
+  const grid=document.getElementById('inv-grid');
+  grid.innerHTML='';
+  if(inv.length===0){
+    grid.innerHTML='<div class="empty-grid"><span class="big">[EMPTY]</span><span style="font-size:11px;color:#1a3a18">Buy something from the terminal.</span></div>';
     return;
   }
-
-  inv.forEach((item, idx) => {
-    const base = item.basePrice || item.boughtAt;
-    const cur = getItemPrice(item.name, base);
-    const sdelta = getItemDelta(item.name, base);
-    const paid = item.boughtAt;
-    const pl2 = cur - paid;
-    const plCls = pl2 > 0.01 ? 'up' : pl2 < -0.01 ? 'dn' : 'flat';
-    const sdCls = sdelta > 0.005 ? 'up' : sdelta < -0.005 ? 'dn' : 'flat';
-    const sellPrice = Math.round(cur * 0.9 * 100) / 100;
-
-    const card = document.createElement('div');
-    card.className = 'item-card';
-    card.innerHTML = `
+  inv.forEach((item,idx)=>{
+    const base=item.basePrice||item.boughtAt;
+    const cur=getItemPrice(item.name,base);
+    const sdelta=getItemDelta(item.name,base);
+    const paid=item.boughtAt;
+    const pl2=cur-paid;
+    const plCls=pl2>0.01?'up':pl2<-0.01?'dn':'flat';
+    const sdCls=sdelta>0.005?'up':sdelta<-0.005?'dn':'flat';
+    const sellPrice=Math.round(cur*0.9*100)/100;
+    const card=document.createElement('div');
+    card.className='item-card';
+    card.innerHTML=`
       <div class="rarity-bar rc-${item.rarity}"></div>
       <div class="ic-name">${item.name}</div>
       <div class="ic-wear txt-${item.rarity}">[${item.rarity.toUpperCase()}] ${item.wear}</div>
       <div class="ic-float">Float: ${item.float}</div>
       <div class="ic-prices">
         <div><div class="ic-cur">$${cur.toFixed(2)}</div><div class="ic-paid">paid $${paid.toFixed(2)}</div></div>
-        <div class="ic-delta ${plCls}">${pl2 >= 0 ? '+' : ''}${pl2.toFixed(2)}</div>
+        <div class="ic-delta ${plCls}">${pl2>=0?'+':''}${pl2.toFixed(2)}</div>
       </div>
-      <div class="ic-sdelta ${sdCls}">5-min: ${sdelta >= 0 ? '+' : ''}${sdelta.toFixed(2)}</div>
+      <div class="ic-sdelta ${sdCls}">5-min: ${sdelta>=0?'+':''}${sdelta.toFixed(2)}</div>
       <button class="btn green" style="width:100%;font-size:10px;padding:6px 0">SELL $${sellPrice.toFixed(2)}</button>
     `;
-    card.querySelector('button').addEventListener('click', () => sellItem(idx, sellPrice));
+    card.querySelector('button').addEventListener('click',()=>sellItem(idx,sellPrice));
     grid.appendChild(card);
   });
 }
 
-function sellItem(idx, sellPrice) {
-  const item = DB.inventory[idx];
-  DB.inventory.splice(idx, 1);
-  DB.money = Math.round((DB.money + sellPrice) * 100) / 100;
+function sellItem(idx,sellPrice){
+  const item=DB.inventory[idx];
+  DB.inventory.splice(idx,1);
+  DB.money=Math.round((DB.money+sellPrice)*100)/100;
   playSfx('money');
   saveDB();
   renderInventory();
-  // Flash a message
-  const banner = document.getElementById('daily-banner');
-  const tmp = document.createElement('div');
-  tmp.className = 'daily-banner';
-  tmp.style.borderColor = '#1a5020';
-  tmp.innerHTML = `<span class="msg" style="color:var(--dim)">✓ Sold ${item.name} for $${sellPrice.toFixed(2)} (90% market rate)</span>`;
-  banner.parentNode.insertBefore(tmp, banner);
-  setTimeout(() => tmp.remove(), 3000);
+  const banner=document.getElementById('daily-banner');
+  const tmp=document.createElement('div');
+  tmp.className='daily-banner';
+  tmp.style.borderColor='#1a5020';
+  tmp.innerHTML=`<span class="msg" style="color:var(--dim)">✓ Sold ${item.name} for $${sellPrice.toFixed(2)} (90% market rate)</span>`;
+  banner.parentNode.insertBefore(tmp,banner);
+  setTimeout(()=>tmp.remove(),3000);
 }
 
 // ════════════════════════════════════════════════════════
 // DAILY BONUS
 // ════════════════════════════════════════════════════════
-function checkDaily() {
-  const now = Date.now();
-  const DAILY_MS = 24 * 60 * 60 * 1000;
-  const canClaim = (now - (DB.lastDaily || 0)) >= DAILY_MS;
-  const banner = document.getElementById('daily-banner');
-  banner.style.display = canClaim ? 'flex' : 'none';
+function checkDaily(){
+  const canClaim=(Date.now()-(DB.lastDaily||0))>=86400000;
+  document.getElementById('daily-banner').style.display=canClaim?'flex':'none';
 }
-
-document.getElementById('daily-btn').addEventListener('click', () => {
-  DB.money = Math.round((DB.money + 50) * 100) / 100;
-  DB.lastDaily = Date.now();
+document.getElementById('daily-btn').addEventListener('click',()=>{
+  DB.money=Math.round((DB.money+50)*100)/100;
+  DB.lastDaily=Date.now();
   saveDB();
   checkDaily();
   refreshHeaderMoney();
-  document.getElementById('s-wallet').textContent = '$' + DB.money.toFixed(2);
 });
 
 // ════════════════════════════════════════════════════════
 // KEYGEN
 // ════════════════════════════════════════════════════════
-function renderKgWallet() {
-  document.getElementById('kg-wallet').textContent = '$' + DB.money.toFixed(2);
-}
-
-function showKgResult(sessionId, password, success, cost, tier) {
-  const box = document.getElementById('kg-result');
-  box.innerHTML = `
+function showKgResult(sessionId,password,success,cost,tier){
+  const box=document.getElementById('kg-result');
+  box.innerHTML=`
     <div class="rb-session">SESSION: ${sessionId} // ${tier}</div>
-    <div class="rb-pass ${success ? '' : 'locked'}">${success ? password : '????'}</div>
+    <div class="rb-pass ${success?'':'locked'}">${success?password:'????'}</div>
     <div class="rb-cost">Deducted: -$${cost.toFixed(2)} // New balance: $${DB.money.toFixed(2)}</div>
-    <div class="rb-status ${success ? 'ok' : 'err'}">${success ? '✓ Valid passcode — enter this in the terminal.' : '✗ Bad decode. Try again or buy guaranteed.'}</div>
+    <div class="rb-status ${success?'ok':'err'}">${success?'✓ Valid passcode — enter this in the terminal.':'✗ Bad decode. Try again or buy guaranteed.'}</div>
   `;
-  if (success) {
-    // Scramble animation
-    const passEl = box.querySelector('.rb-pass');
-    let r = 0, total = 14;
-    const iv = setInterval(() => {
-      if (r >= total) { clearInterval(iv); passEl.textContent = password; return; }
-      passEl.textContent = Array.from({length:4}, (_,i) => r > (total*(i+1)/4) ? password[i] : Math.floor(Math.random()*10)).join('');
+  if(success){
+    const passEl=box.querySelector('.rb-pass');
+    let r=0,total=14;
+    const iv=setInterval(()=>{
+      if(r>=total){clearInterval(iv);passEl.textContent=password;return;}
+      passEl.textContent=Array.from({length:4},(_,i)=>r>(total*(i+1)/4)?password[i]:Math.floor(Math.random()*10)).join('');
       r++;
-    }, 55);
+    },55);
   }
 }
 
-function kgPurchase(guaranteed) {
-  const cost = guaranteed ? 25 : 5;
-  const sidRaw = parseInt(document.getElementById('kg-sid-input').value);
-  if (!sidRaw || sidRaw < 1000 || sidRaw > 9999) {
-    document.getElementById('kg-result').innerHTML = '<div class="rb-status err">⚠ Invalid Session ID. Enter 4-digit number from terminal.</div>';
+function kgPurchase(guaranteed){
+  const cost=guaranteed?25:5;
+  const sidRaw=parseInt(document.getElementById('kg-sid-input').value);
+  if(!sidRaw||sidRaw<1000||sidRaw>9999){
+    document.getElementById('kg-result').innerHTML='<div class="rb-status err">⚠ Invalid Session ID. Enter 4-digit number from terminal.</div>';
     return;
   }
-  if (DB.money < cost) {
-    document.getElementById('kg-result').innerHTML = `<div class="rb-status err">Insufficient funds. Need $${cost.toFixed(2)}, have $${DB.money.toFixed(2)}.</div>`;
+  if(DB.money<cost){
+    document.getElementById('kg-result').innerHTML=`<div class="rb-status err">Insufficient funds. Need $${cost.toFixed(2)}, have $${DB.money.toFixed(2)}.</div>`;
     return;
   }
-  DB.money = Math.round((DB.money - cost) * 100) / 100;
+  DB.money=Math.round((DB.money-cost)*100)/100;
   playSfx('littleglitch');
-
-  const correct = derivePassword(sidRaw);
-  let success, password;
-  if (guaranteed) {
-    success = true; password = correct;
-  } else {
-    success = Math.random() < 0.20;
-    password = success ? correct : String(Math.floor(1000 + Math.random() * 8999));
-  }
-
-  const tier = guaranteed ? 'GUARANTEED' : 'GAMBLE';
-  // Add to history
-  DB.kgHistory = DB.kgHistory || [];
-  DB.kgHistory.unshift({ sessionId: sidRaw, password, success, cost, tier, time: new Date().toLocaleTimeString() });
+  const correct=derivePassword(sidRaw);
+  let success,password;
+  if(guaranteed){success=true;password=correct;}
+  else{success=Math.random()<0.20;password=success?correct:String(Math.floor(1000+Math.random()*8999));}
+  const tier=guaranteed?'GUARANTEED':'GAMBLE';
+  DB.kgHistory=DB.kgHistory||[];
+  DB.kgHistory.unshift({sessionId:sidRaw,password,success,cost,tier,time:new Date().toLocaleTimeString()});
   saveDB();
-  renderKgWallet();
   refreshHeaderMoney();
-  showKgResult(sidRaw, password, success, cost, tier);
+  showKgResult(sidRaw,password,success,cost,tier);
   renderKgHistory();
 }
 
-function renderKgHistory() {
-  const h = DB.kgHistory || [];
-  document.getElementById('kg-hist-count').textContent = `(${h.length})`;
-  const empty = document.getElementById('kg-hist-empty');
-  const table = document.getElementById('kg-hist-table');
-  if (h.length === 0) { empty.style.display = 'block'; table.style.display = 'none'; return; }
-  empty.style.display = 'none'; table.style.display = 'table';
-  document.getElementById('kg-hist-body').innerHTML = h.map(e => `<tr>
+function renderKgHistory(){
+  const h=DB.kgHistory||[];
+  document.getElementById('kg-hist-count').textContent=`(${h.length})`;
+  const empty=document.getElementById('kg-hist-empty');
+  const table=document.getElementById('kg-hist-table');
+  if(h.length===0){empty.style.display='block';table.style.display='none';return;}
+  empty.style.display='none';table.style.display='table';
+  document.getElementById('kg-hist-body').innerHTML=h.map(e=>`<tr>
     <td class="ht-sid">${e.sessionId}</td>
-    <td class="ht-pass ${e.success ? '' : 'locked'}">${e.password}</td>
+    <td class="ht-pass ${e.success?'':'locked'}">${e.password}</td>
     <td style="font-size:10px;color:${e.success?'#00ff88':'var(--red)'}">${e.success?'✓ VALID':'✗ FAIL'} (${e.tier})</td>
     <td class="ht-cost">$${e.cost.toFixed(2)}</td>
     <td class="ht-time">${e.time}</td>
   </tr>`).join('');
 }
 
-document.getElementById('kg-sure-btn').addEventListener('click', () => kgPurchase(true));
-document.getElementById('kg-gamble-btn').addEventListener('click', () => kgPurchase(false));
-document.getElementById('kg-autofill-btn').addEventListener('click', () => {
-  document.getElementById('kg-sid-input').value = DB.sessionId;
-  const btn = document.getElementById('kg-autofill-btn');
-  const orig = btn.textContent;
-  btn.textContent = '✓ FILLED';
-  setTimeout(() => btn.textContent = orig, 1200);
+document.getElementById('kg-sure-btn').addEventListener('click',()=>kgPurchase(true));
+document.getElementById('kg-gamble-btn').addEventListener('click',()=>kgPurchase(false));
+document.getElementById('kg-autofill-btn').addEventListener('click',()=>{
+  document.getElementById('kg-sid-input').value=DB.sessionId;
+  const btn=document.getElementById('kg-autofill-btn');
+  const orig=btn.textContent; btn.textContent='✓ FILLED';
+  setTimeout(()=>btn.textContent=orig,1200);
 });
 
 // ════════════════════════════════════════════════════════
-// CLOCK + TICKS
+// WEAPON EDITOR (unused now — kept for compatibility with Firestore listener)
 // ════════════════════════════════════════════════════════
-function updateClock() {
-  document.getElementById('status-time').textContent = new Date().toLocaleTimeString();
-  // Market countdown
-  const secs = secsUntilNextSlot();
-  const m = Math.floor(secs / 60), s = secs % 60;
-  const cd = m + ':' + String(s).padStart(2,'0');
-  document.getElementById('mkt-countdown').textContent = cd;
-  document.getElementById('tab-mkt-tick').textContent = cd;
+function renderEditorList(){
+  // No DOM elements exist anymore, so just return
+  return;
 }
 
-let lastSlot = currentSlot();
-function pollSlot() {
-  const s = currentSlot();
-  if (s !== lastSlot) {
-    lastSlot = s;
-    // Re-render market if visible
-    if (document.getElementById('pane-market').classList.contains('active')) renderMarket();
-    if (document.getElementById('pane-inventory').classList.contains('active')) renderInventory();
+// ════════════════════════════════════════════════════════
+// CLOCK + SLOT POLL
+// ════════════════════════════════════════════════════════
+function updateClock(){
+  document.getElementById('status-time').textContent=new Date().toLocaleTimeString();
+  const secs=secsUntilNextSlot();
+  const m=Math.floor(secs/60),s=secs%60;
+  const cd=m+':'+String(s).padStart(2,'0');
+  document.getElementById('mkt-countdown').textContent=cd;
+  document.getElementById('tab-mkt-tick').textContent=cd;
+}
+
+let lastSlot=currentSlot();
+function pollSlot(){
+  const s=currentSlot();
+  if(s!==lastSlot){
+    lastSlot=s;
+    maybeWritePrices();
+    if(document.getElementById('pane-market').classList.contains('active')) renderMarket();
+    if(document.getElementById('pane-inventory').classList.contains('active')) renderInventory();
   }
 }
 
-setInterval(updateClock, 1000);
-setInterval(pollSlot, 10000);
+setInterval(updateClock,1000);
+setInterval(pollSlot,10000);
 updateClock();
+
+// ════════════════════════════════════════════════════════
+// VHS CRASH
+// ════════════════════════════════════════════════════════
+async function playVHSCrash(){
+  const vhs=document.getElementById('vhsOverlay');
+  vhs.classList.add('active','glitchPhase');
+  if(SFX.glitch){SFX.glitch.pause();SFX.glitch.currentTime=0;}
+  await tSleep(4000);
+  vhs.classList.remove('glitchPhase');
+  await tSleep(5000);
+  vhs.style.opacity='0';
+  await tSleep(1500);
+  vhs.classList.remove('active');
+  vhs.style.opacity='';
+}
 
 // ════════════════════════════════════════════════════════
 // BOOT
 // ════════════════════════════════════════════════════════
 loadDB();
-if(DB.testMode && DB.originalState){ DB = DB.originalState; }
+if(DB.testMode&&DB.originalState){DB=DB.originalState;}
 renderKgHistory();
 refreshHeaderMoney();
 checkDaily();
-if (DB.dead) { stopSfx('welcome'); playSfx('glitch'); tShowDeadLogin(); } else { tShowLogin(); }
-// Focus input on terminal tab click
-document.querySelector('[data-tab="terminal"]').addEventListener('click', () => {
-  setTimeout(() => tInput.focus(), 50);
+initFirestore();
+
+if(DB.dead){stopSfx('glitch');playSfx('glitch');tShowDeadLogin();}
+else{tShowLogin();}
+
+document.querySelector('[data-tab="terminal"]').addEventListener('click',()=>{
+  setTimeout(()=>tInput.focus(),50);
 });
-
-async function playVHSCrash(){
- const vhs=document.getElementById('vhsOverlay');
- vhs.classList.add('active');
- vhs.classList.add('glitchPhase');
-
- if(SFX.glitch){
-   SFX.glitch.pause();
-   SFX.glitch.currentTime=0;
- }
-
- await tSleep(4000);
- vhs.classList.remove('glitchPhase');
-
- await tSleep(5000);
-
- vhs.style.opacity='0';
- await tSleep(1500);
-
- vhs.classList.remove('active');
- vhs.style.opacity='';
-}
-
 </script>
-
-<div id="vhsOverlay">
-  <div class="noise"></div>
-  <div class="scanlines"></div>
-  <div class="vhsText">NO SIGNAL</div>
-</div>
-
 </body>
 </html>
